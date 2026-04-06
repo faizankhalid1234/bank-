@@ -1,0 +1,52 @@
+{% extends "banking/base.html" %}
+{% block title %}Payment detail · {{ BANK_NAME }}{% endblock %}
+{% block content %}
+<section class="card" style="max-width:560px;margin-inline:auto">
+  <h1>Payment confirmation</h1>
+  <p class="lead">A quick summary so you always know what moved. For this payment, funds were <strong>debited</strong> from your account.</p>
+
+  <div class="receipt-highlight">
+    <div class="split">
+      <span class="muted">Effect on your balance</span>
+      <span class="badge badge-payment_sent">Debit · Sent</span>
+    </div>
+    <div class="big" style="color:var(--danger)">− {{ tx.amount }}</div>
+    <p class="muted" style="margin:0;font-size:0.9rem">New balance after this payment: <strong style="color:var(--text)">{{ tx.balance_after }}</strong></p>
+  </div>
+
+  <div class="meta-row">
+    <div class="meta-item">
+      <div class="k">To account</div>
+      <div class="v">{{ tx.counterparty_account }}</div>
+    </div>
+    <div class="meta-item">
+      <div class="k">To IBAN</div>
+      <div class="v">{{ tx.counterparty_iban }}</div>
+    </div>
+    <div class="meta-item" style="grid-column:1/-1">
+      <div class="k">Reference</div>
+      <div class="v">{{ tx.description|default:"—" }}</div>
+    </div>
+    <div class="meta-item" style="grid-column:1/-1">
+      <div class="k">Time</div>
+      <div class="v">{{ tx.created_at }}</div>
+    </div>
+  </div>
+
+  <div class="actions no-print" style="grid-template-columns:1fr 1fr;margin-top:1.25rem">
+    <a class="btn btn-ghost btn-block" href="{% url 'banking:dashboard' %}">Dashboard</a>
+    <a class="btn btn-ghost btn-block" href="{% url 'banking:history' %}">Activity</a>
+  </div>
+
+  {% if not tx.user_saved %}
+    <form method="post" action="{% url 'banking:save_receipt' tx.pk %}" class="no-print" style="margin-top:0.75rem">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary btn-block">Save this receipt to my list</button>
+    </form>
+  {% else %}
+    <p class="muted no-print" style="margin-top:1rem;font-size:0.9rem">This receipt is already in your saved list under Activity.</p>
+  {% endif %}
+
+  <p class="muted no-print" style="margin-top:1rem;font-size:0.85rem">Tip: use your browser’s print dialog for a paper copy — layout is print-friendly.</p>
+</section>
+{% endblock %}

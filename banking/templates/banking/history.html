@@ -1,0 +1,82 @@
+{% extends "banking/base.html" %}
+{% block title %}Activity · {{ BANK_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="split">
+    <div>
+      <h1 style="margin-bottom:0.35rem">Activity &amp; receipts</h1>
+      <p class="lead" style="margin:0">Every credit, debit, and transfer in one place. Filter to see saved payment receipts only.</p>
+    </div>
+    <div class="actions" style="margin:0;grid-template-columns:1fr;max-width:200px">
+      {% if saved_only %}
+        <a class="btn btn-ghost btn-block" href="{% url 'banking:history' %}">Show all</a>
+      {% else %}
+        <a class="btn btn-ghost btn-block" href="{% url 'banking:history' %}?saved=1">Saved only</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tx">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Detail</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Balance after</th>
+          <th>Saved</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in transactions %}
+          <tr>
+            <td class="muted">{{ t.created_at|date:"Y-m-d H:i" }}</td>
+            <td>
+              {{ t.description|default:"—" }}
+              {% if t.kind == "payment_sent" %}
+                <div class="muted" style="font-size:0.8rem;margin-top:0.2rem">→ {{ t.counterparty_account }}</div>
+              {% elif t.kind == "payment_received" %}
+                <div class="muted" style="font-size:0.8rem;margin-top:0.2rem">← {{ t.counterparty_account }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if t.kind == "credit" %}
+                <span class="badge badge-credit">Credit</span>
+              {% elif t.kind == "debit" %}
+                <span class="badge badge-debit">Debit</span>
+              {% elif t.kind == "payment_sent" %}
+                <span class="badge badge-payment_sent">Sent</span>
+              {% else %}
+                <span class="badge badge-payment_received">Received</span>
+              {% endif %}
+            </td>
+            <td style="font-weight:600">
+              {% if t.kind == "credit" or t.kind == "payment_received" %}+{% else %}−{% endif %}{{ t.amount }}
+            </td>
+            <td>{{ t.balance_after }}</td>
+            <td>
+              {% if t.kind == "payment_sent" %}
+                {% if t.user_saved %}
+                  <form method="post" action="{% url 'banking:unsave_receipt' t.pk %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-ghost" style="padding:0.35rem 0.6rem;font-size:0.8rem">Remove</button>
+                  </form>
+                {% else %}
+                  <a class="btn btn-ghost" style="padding:0.35rem 0.6rem;font-size:0.8rem" href="{% url 'banking:receipt' t.pk %}">Save…</a>
+                {% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="muted">No transactions to show yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

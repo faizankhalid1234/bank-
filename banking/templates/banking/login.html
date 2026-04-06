@@ -1,0 +1,28 @@
+{% extends "banking/base.html" %}
+{% block title %}Log in · {{ BANK_NAME }}{% endblock %}
+{% block content %}
+<div class="hero-grid">
+  <section class="card" style="max-width:440px;margin-inline:auto;grid-column:1/-1">
+    <h1>Welcome back</h1>
+    <p class="lead">Sign in to manage payments, credits, debits, and saved receipts.</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="input-group">
+        <label for="id_username">Username</label>
+        {{ form.username }}
+        {{ form.username.errors }}
+      </div>
+      <div class="input-group">
+        <label for="id_password">Password</label>
+        {{ form.password }}
+        {{ form.password.errors }}
+      </div>
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{{ form.non_field_errors }}</ul>
+      {% endif %}
+      <button type="submit" class="btn btn-primary btn-block">Log in</button>
+    </form>
+    <p class="muted" style="margin-top:1rem;font-size:0.9rem">New here? <a href="{% url 'banking:register' %}" style="color:var(--accent);font-weight:600">Open an AlyBank account</a></p>
+  </section>
+</div>
+{% endblock %}

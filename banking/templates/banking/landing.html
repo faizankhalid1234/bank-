@@ -1,0 +1,37 @@
+{% extends "banking/base.html" %}
+{% block title %}Welcome · {{ BANK_NAME }}{% endblock %}
+{% block content %}
+<div class="hero-grid">
+  <section class="card landing-hero">
+    <h1>Money moves beautifully at {{ BANK_NAME }}.</h1>
+    <p>Crystal-clear balances, instant payments between AlyBank accounts, credit and debit tools, and a statement you can actually read — on phone, tablet, or desktop.</p>
+    <ul class="feature-list">
+      <li>Send payments with a clear debit confirmation and optional saved receipt.</li>
+      <li>Credit or debit your wallet for deposits and withdrawals.</li>
+      <li>Light and dark themes tuned for long sessions.</li>
+    </ul>
+    <div class="actions" style="margin-top:1.5rem;max-width:420px">
+      <a class="btn btn-primary btn-block" href="{% url 'banking:register' %}">Create your account</a>
+      <a class="btn btn-ghost btn-block" href="{% url 'banking:login' %}">Already banking? Log in</a>
+    </div>
+  </section>
+  <aside class="card" style="display:flex;flex-direction:column;justify-content:center">
+    <h2 style="margin-top:0;font-size:1.25rem">Why it feels different</h2>
+    <p class="lead" style="margin-bottom:0">Soft glass surfaces, confident typography, and responsive grids keep every action one tap away — whether you are on a narrow phone or a wide laptop.</p>
+    <div class="meta-row" style="margin-top:1.25rem">
+      <div class="meta-item">
+        <div class="k">Bank</div>
+        <div class="v">{{ BANK_NAME }}</div>
+      </div>
+      <div class="meta-item">
+        <div class="k">Sample account</div>
+        <div class="v">1000000000</div>
+      </div>
+      <div class="meta-item" style="grid-column:1/-1">
+        <div class="k">Sample IBAN</div>
+        <div class="v">ALYBANK10000000000</div>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

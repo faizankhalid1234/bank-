@@ -1,0 +1,175 @@
+{% extends "banking/base.html" %}
+{% block title %}Dashboard · {{ BANK_NAME }}{% endblock %}
+{% block content %}
+<div class="dash-shell">
+  <header class="dash-top">
+    <div class="dash-top-text">
+      <p class="dash-eyebrow">Dashboard</p>
+      <h1 class="dash-heading">Hello, {{ user.first_name|default:user.username }}</h1>
+      <p class="dash-tagline">Your {{ BANK_NAME }} overview — balance, transfers, and recent activity.</p>
+    </div>
+    <div class="dash-balance-chip" aria-label="Available balance">
+      <span class="dash-balance-chip-label">Available</span>
+      <span class="dash-balance-chip-value">{{ account.balance }} <span class="dash-balance-chip-cur">PKR</span></span>
+    </div>
+  </header>
+
+  <div class="dash-grid">
+    <div class="dash-column dash-column--primary">
+      <section class="dash-wallet" aria-label="Wallet preview">
+        <div class="dash-wallet-bg" aria-hidden="true"></div>
+        <div class="dash-wallet-body">
+          <div class="dash-wallet-head">
+            <p class="dash-wallet-brand">ALY BANK</p>
+            <span class="dash-wallet-menu" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+          </div>
+          <button type="button" class="dash-wallet-tap" id="dash-mask-balance" aria-pressed="false" aria-label="Show or hide preview balance">
+            <span class="dash-wallet-masked">PKR ••••••••</span>
+            <span class="dash-wallet-shown" hidden>PKR {{ account.balance }}</span>
+          </button>
+          <p class="dash-wallet-hint">Tap to preview your balance on this card</p>
+          <div class="dash-wallet-inset">
+            <div class="dash-wallet-inset-head">
+              <span>Virtual card</span>
+              <span class="dash-wallet-badge">Active</span>
+            </div>
+            <p class="dash-wallet-pan">•••• •••• •••• 4242</p>
+            <p class="dash-wallet-foot">Limits · freeze · demo pay — all in Cards</p>
+          </div>
+          <div class="dash-wallet-chips">
+            <span class="dash-chip">Passkeys</span>
+            <span class="dash-chip">IBAN</span>
+            <span class="dash-chip">CSV</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="dash-panel">
+        <h2 class="dash-panel-title">Account details</h2>
+        <p class="dash-panel-desc">Use these for incoming transfers and support.</p>
+        <dl class="dash-kv">
+          <div class="dash-kv-row">
+            <dt>Account number</dt>
+            <dd><code class="dash-code">{{ account.account_number }}</code></dd>
+          </div>
+          <div class="dash-kv-row">
+            <dt>IBAN</dt>
+            <dd><code class="dash-code">{{ account.iban }}</code></dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="dash-panel dash-panel--actions">
+        <h2 class="dash-panel-title">Quick actions</h2>
+        <p class="dash-panel-desc">Most-used tasks in one tap.</p>
+        <nav class="dash-actions" aria-label="Quick actions">
+          <a class="dash-action dash-action--pay" href="{% url 'banking:payment' %}">
+            <span class="dash-action-icon" aria-hidden="true">↗</span>
+            <span class="dash-action-text">Send payment</span>
+          </a>
+          <a class="dash-action dash-action--in" href="{% url 'banking:credit' %}">
+            <span class="dash-action-icon" aria-hidden="true">+</span>
+            <span class="dash-action-text">Credit</span>
+          </a>
+          <a class="dash-action dash-action--out" href="{% url 'banking:debit' %}">
+            <span class="dash-action-icon" aria-hidden="true">−</span>
+            <span class="dash-action-text">Debit</span>
+          </a>
+          <a class="dash-action dash-action--hist" href="{% url 'banking:history' %}">
+            <span class="dash-action-icon" aria-hidden="true">≡</span>
+            <span class="dash-action-text">Full activity</span>
+          </a>
+        </nav>
+      </section>
+    </div>
+
+    <aside class="dash-column dash-column--feed">
+      <section class="dash-panel dash-feed" aria-labelledby="dash-feed-title">
+        <div class="dash-feed-head">
+          <div>
+            <h2 id="dash-feed-title" class="dash-panel-title">Recent movement</h2>
+            <p class="dash-panel-desc">Latest lines on your account.</p>
+          </div>
+          <a class="dash-feed-link" href="{% url 'banking:history' %}">All activity</a>
+        </div>
+        {% if recent %}
+          <ul class="dash-timeline">
+            {% for t in recent %}
+              <li class="dash-timeline-item">
+                <div class="dash-timeline-dot" aria-hidden="true"></div>
+                <div class="dash-timeline-body">
+                  <div class="dash-timeline-meta">
+                    <time class="dash-timeline-when">{{ t.created_at|date:"M j, H:i" }}</time>
+                    {% if t.kind == "credit" %}
+                      <span class="badge badge-credit">Credit</span>
+                    {% elif t.kind == "debit" %}
+                      <span class="badge badge-debit">Debit</span>
+                    {% elif t.kind == "payment_sent" %}
+                      <span class="badge badge-payment_sent">Sent</span>
+                    {% else %}
+                      <span class="badge badge-payment_received">Received</span>
+                    {% endif %}
+                  </div>
+                  <div class="dash-timeline-amt">
+                    <span class="dash-amt">{% if t.kind == "credit" or t.kind == "payment_received" %}+{% else %}−{% endif %}{{ t.amount }}</span>
+                    <button type="button" class="dash-amt-eye" aria-label="Hide or show amount" aria-pressed="false" title="Hide amount">
+                      <svg class="dash-svg-eye dash-svg-eye--on" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                      <svg class="dash-svg-eye dash-svg-eye--off" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" hidden><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18 18 0 0 1 5-6M9.9 4.2A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.2 3.2"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="dash-feed-empty">No transactions yet. Use Credit or Send payment to get started.</p>
+        {% endif %}
+      </section>
+    </aside>
+  </div>
+</div>
+<script>
+  (function () {
+    var b = document.getElementById("dash-mask-balance");
+    if (b) {
+      var m = b.querySelector(".dash-wallet-masked");
+      var s = b.querySelector(".dash-wallet-shown");
+      b.addEventListener("click", function () {
+        var revealed = b.getAttribute("aria-pressed") === "true";
+        if (revealed) {
+          b.setAttribute("aria-pressed", "false");
+          if (m) m.hidden = false;
+          if (s) s.hidden = true;
+        } else {
+          b.setAttribute("aria-pressed", "true");
+          if (m) m.hidden = true;
+          if (s) s.hidden = false;
+        }
+      });
+    }
+    document.querySelectorAll(".dash-amt-eye").forEach(function (btn) {
+      var row = btn.closest(".dash-timeline-amt");
+      if (!row) return;
+      var amt = row.querySelector(".dash-amt");
+      if (!amt) return;
+      var full = amt.textContent.trim();
+      btn.addEventListener("click", function () {
+        var hidden = btn.getAttribute("aria-pressed") === "true";
+        if (hidden) {
+          amt.textContent = full;
+          btn.setAttribute("aria-pressed", "false");
+          btn.setAttribute("title", "Hide amount");
+          row.querySelector(".dash-svg-eye--on").removeAttribute("hidden");
+          row.querySelector(".dash-svg-eye--off").setAttribute("hidden", "");
+        } else {
+          amt.textContent = "••••";
+          btn.setAttribute("aria-pressed", "true");
+          btn.setAttribute("title", "Show amount");
+          row.querySelector(".dash-svg-eye--on").setAttribute("hidden", "");
+          row.querySelector(".dash-svg-eye--off").removeAttribute("hidden");
+        }
+      });
+    });
+  })();
+</script>
+{% endblock %}

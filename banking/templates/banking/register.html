@@ -1,0 +1,22 @@
+{% extends "banking/base.html" %}
+{% block title %}Open account · {{ BANK_NAME }}{% endblock %}
+{% block content %}
+<div class="hero-grid">
+  <section class="card" style="max-width:440px;margin-inline:auto;grid-column:1/-1">
+    <h1>Open your AlyBank account</h1>
+    <p class="lead">We will assign your account number and IBAN automatically. The first customer receives account <strong>1000000000</strong>.</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="input-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {{ field.errors }}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary btn-block">Create account</button>
+    </form>
+    <p class="muted" style="margin-top:1rem;font-size:0.9rem">Already have access? <a href="{% url 'banking:login' %}" style="color:var(--accent);font-weight:600">Log in</a></p>
+  </section>
+</div>
+{% endblock %}

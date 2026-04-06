@@ -1,0 +1,26 @@
+{% extends "banking/base.html" %}
+{% block title %}Credit · {{ BANK_NAME }}{% endblock %}
+{% block content %}
+<section class="card" style="max-width:520px;margin-inline:auto">
+  <h1>Credit funds</h1>
+  <p class="lead">Simulate a deposit or incoming funds. This increases your balance and records a <strong>credit</strong> line on your statement.</p>
+  <p class="muted" style="font-size:0.9rem">Current balance: <strong style="color:var(--text)">{{ account.balance }}</strong></p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="input-group">
+      <label for="id_amount">Amount</label>
+      {{ form.amount }}
+      {{ form.amount.errors }}
+    </div>
+    <div class="input-group">
+      <label for="id_description">Note (optional)</label>
+      {{ form.description }}
+      {{ form.description.errors }}
+    </div>
+    <div class="actions" style="grid-template-columns:1fr 1fr;margin-top:0">
+      <a class="btn btn-ghost btn-block" href="{% url 'banking:dashboard' %}">Back</a>
+      <button type="submit" class="btn btn-success btn-block">Apply credit</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

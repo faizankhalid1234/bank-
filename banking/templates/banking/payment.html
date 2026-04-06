@@ -1,0 +1,31 @@
+{% extends "banking/base.html" %}
+{% block title %}Send payment · {{ BANK_NAME }}{% endblock %}
+{% block content %}
+<section class="card" style="max-width:560px;margin-inline:auto">
+  <h1>Send payment</h1>
+  <p class="lead">Transfer instantly to another {{ BANK_NAME }} customer using their <strong>account number</strong> or <strong>IBAN</strong> (for example <code style="font-size:0.9em">1000000000</code> or <code style="font-size:0.9em">ALYBANK10000000000</code>).</p>
+  <p class="muted" style="font-size:0.9rem">Your balance: <strong style="color:var(--text)">{{ account.balance }}</strong></p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="input-group">
+      <label for="id_to_account_or_iban">Recipient account or IBAN</label>
+      {{ form.to_account_or_iban }}
+      {{ form.to_account_or_iban.errors }}
+    </div>
+    <div class="input-group">
+      <label for="id_amount">Amount</label>
+      {{ form.amount }}
+      {{ form.amount.errors }}
+    </div>
+    <div class="input-group">
+      <label for="id_description">Reference (optional)</label>
+      {{ form.description }}
+      {{ form.description.errors }}
+    </div>
+    <div class="actions" style="grid-template-columns:1fr 1fr;margin-top:0">
+      <a class="btn btn-ghost btn-block" href="{% url 'banking:dashboard' %}">Back</a>
+      <button type="submit" class="btn btn-primary btn-block">Send payment</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
