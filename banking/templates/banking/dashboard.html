@@ -1,175 +1,206 @@
 {% extends "banking/base.html" %}
 {% block title %}Dashboard · {{ BANK_NAME }}{% endblock %}
 {% block content %}
-<div class="dash-shell">
-  <header class="dash-top">
-    <div class="dash-top-text">
-      <p class="dash-eyebrow">Dashboard</p>
-      <h1 class="dash-heading">Hello, {{ user.first_name|default:user.username }}</h1>
-      <p class="dash-tagline">Your {{ BANK_NAME }} overview — balance, transfers, and recent activity.</p>
-    </div>
-    <div class="dash-balance-chip" aria-label="Available balance">
-      <span class="dash-balance-chip-label">Available</span>
-      <span class="dash-balance-chip-value">{{ account.balance }} <span class="dash-balance-chip-cur">PKR</span></span>
-    </div>
-  </header>
-
-  <div class="dash-grid">
-    <div class="dash-column dash-column--primary">
-      <section class="dash-wallet" aria-label="Wallet preview">
-        <div class="dash-wallet-bg" aria-hidden="true"></div>
-        <div class="dash-wallet-body">
-          <div class="dash-wallet-head">
-            <p class="dash-wallet-brand">ALY BANK</p>
-            <span class="dash-wallet-menu" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-          </div>
-          <button type="button" class="dash-wallet-tap" id="dash-mask-balance" aria-pressed="false" aria-label="Show or hide preview balance">
-            <span class="dash-wallet-masked">PKR ••••••••</span>
-            <span class="dash-wallet-shown" hidden>PKR {{ account.balance }}</span>
-          </button>
-          <p class="dash-wallet-hint">Tap to preview your balance on this card</p>
-          <div class="dash-wallet-inset">
-            <div class="dash-wallet-inset-head">
-              <span>Virtual card</span>
-              <span class="dash-wallet-badge">Active</span>
+<div class="dash-page">
+  <div class="dash-shell">
+    <section class="dash-hero" aria-label="Welcome">
+      <div class="dash-hero-copy">
+        <p class="dash-hero-eyebrow">Open-source demo</p>
+        <h1 class="dash-hero-title">Hello, {{ user.first_name|default:user.username }} — banking that feels <span class="dash-hero-em">calm, clear, and in your control.</span></h1>
+        <p class="dash-hero-lead">
+          Virtual cards, passkeys-ready flows, IBAN transfers, and receipts — built as a <strong>portfolio playground</strong> you can fork and extend. Nothing here moves real money.
+        </p>
+        <ul class="dash-hero-tags" aria-label="Stack">
+          <li>Django 5</li>
+          <li>SQLite</li>
+          <li>Templates</li>
+          <li>MIT-style demo</li>
+          <li>PKR demo</li>
+          <li>WebAuthn-ready</li>
+        </ul>
+        <div class="dash-hero-cta">
+          <a class="dash-hero-btn dash-hero-btn--primary" href="{% url 'banking:payment' %}">Send payment</a>
+          <a class="dash-hero-btn dash-hero-btn--outline" href="{% url 'banking:history' %}">View activity</a>
+        </div>
+      </div>
+      <div class="dash-hero-card-wrap">
+        <div
+          class="dash-wallet dash-wallet--hero"
+          id="dash-wallet"
+          role="button"
+          tabindex="0"
+          aria-label="Tap or press Enter to show or hide balance"
+        >
+          <div class="dash-wallet-mesh" aria-hidden="true"></div>
+          <div class="dash-wallet-shine" aria-hidden="true"></div>
+          <div class="dash-wallet-inner dash-wallet-inner--hero">
+            <div class="dash-hero-wallet-head">
+              <span class="dash-wallet-brand dash-wallet-brand--hero">{{ BANK_NAME }} wallet</span>
+              <span class="dash-hero-wallet-grid" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" opacity="0.85"/>
+                  <rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" opacity="0.85"/>
+                  <rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" opacity="0.85"/>
+                  <rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" opacity="0.85"/>
+                </svg>
+              </span>
             </div>
-            <p class="dash-wallet-pan">•••• •••• •••• 4242</p>
-            <p class="dash-wallet-foot">Limits · freeze · demo pay — all in Cards</p>
-          </div>
-          <div class="dash-wallet-chips">
-            <span class="dash-chip">Passkeys</span>
-            <span class="dash-chip">IBAN</span>
-            <span class="dash-chip">CSV</span>
+            <div class="dash-hero-wallet-balance">
+              <p class="dash-hero-wallet-balance-label">Available</p>
+              <div class="dash-wallet-line dash-wallet-line--hero" id="dash-wallet-line">
+                <span class="dash-wallet-amt dash-wallet-amt--hero" id="dash-wallet-amt-shown" hidden><span class="dash-wallet-pkr--prefix">PKR</span> {{ account.balance }}</span>
+                <span class="dash-wallet-mask dash-wallet-mask--hero" id="dash-wallet-amt-mask"><span class="dash-wallet-pkr--prefix">PKR</span> ●●●●●●●●</span>
+              </div>
+              <p class="dash-hero-wallet-hint">Tap the card to reveal your demo balance.</p>
+            </div>
+            <div class="dash-wallet-inset">
+              <div class="dash-wallet-inset-top">
+                <span class="dash-wallet-inset-title">Virtual card</span>
+                <span class="dash-wallet-inset-badge">Active</span>
+              </div>
+              <p class="dash-wallet-inset-pan" aria-hidden="true">●●●● ●●●● ●●●● {{ account.account_number|slice:"-4:" }}</p>
+              <p class="dash-wallet-inset-meta">Limits · freeze · demo pay — all in Cards</p>
+            </div>
+            <div class="dash-hero-wallet-pills" aria-hidden="true">
+              <span>Passkeys</span>
+              <span>IBAN</span>
+              <span>CSV</span>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="dash-panel">
-        <h2 class="dash-panel-title">Account details</h2>
-        <p class="dash-panel-desc">Use these for incoming transfers and support.</p>
-        <dl class="dash-kv">
-          <div class="dash-kv-row">
-            <dt>Account number</dt>
-            <dd><code class="dash-code">{{ account.account_number }}</code></dd>
-          </div>
-          <div class="dash-kv-row">
-            <dt>IBAN</dt>
-            <dd><code class="dash-code">{{ account.iban }}</code></dd>
-          </div>
-        </dl>
-      </section>
+    <div class="dash-grid dash-grid--single">
+      <div class="dash-column dash-column--primary">
+        <section class="dash-panel">
+          <h2 class="dash-panel-title">Account</h2>
+          <dl class="dash-dl">
+            <div class="dash-dl-row">
+              <dt>Account number</dt>
+              <dd><code>{{ account.account_number }}</code></dd>
+            </div>
+            <div class="dash-dl-row">
+              <dt>IBAN</dt>
+              <dd><code>{{ account.iban }}</code></dd>
+            </div>
+            <div class="dash-dl-row">
+              <dt>Exports</dt>
+              <dd class="dash-dl-actions">
+                <span class="dash-pill">CSV</span>
+                <span class="dash-pill dash-pill--muted">Statements</span>
+              </dd>
+            </div>
+          </dl>
+        </section>
 
-      <section class="dash-panel dash-panel--actions">
-        <h2 class="dash-panel-title">Quick actions</h2>
-        <p class="dash-panel-desc">Most-used tasks in one tap.</p>
-        <nav class="dash-actions" aria-label="Quick actions">
-          <a class="dash-action dash-action--pay" href="{% url 'banking:payment' %}">
-            <span class="dash-action-icon" aria-hidden="true">↗</span>
-            <span class="dash-action-text">Send payment</span>
-          </a>
-          <a class="dash-action dash-action--in" href="{% url 'banking:credit' %}">
-            <span class="dash-action-icon" aria-hidden="true">+</span>
-            <span class="dash-action-text">Credit</span>
-          </a>
-          <a class="dash-action dash-action--out" href="{% url 'banking:debit' %}">
-            <span class="dash-action-icon" aria-hidden="true">−</span>
-            <span class="dash-action-text">Debit</span>
-          </a>
-          <a class="dash-action dash-action--hist" href="{% url 'banking:history' %}">
-            <span class="dash-action-icon" aria-hidden="true">≡</span>
-            <span class="dash-action-text">Full activity</span>
-          </a>
-        </nav>
-      </section>
+        <section class="dash-panel dash-panel--actions">
+          <h2 class="dash-panel-title">Quick actions</h2>
+          <div class="dash-action-grid">
+            <a class="dash-action" href="{% url 'banking:payment' %}">
+              <span class="dash-action-icon" aria-hidden="true">↗</span>
+              <span class="dash-action-label">Send</span>
+            </a>
+            <a class="dash-action" href="{% url 'banking:history' %}">
+              <span class="dash-action-icon" aria-hidden="true">≡</span>
+              <span class="dash-action-label">Activity</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="dash-more-services" id="dash-more-services" aria-labelledby="dash-services-title">
+          <header class="dash-more-services-head">
+            <h2 id="dash-services-title" class="dash-more-services-title">More services</h2>
+            <p class="dash-more-services-sub">What you can explore — compact shortcuts; some are live, others ship next.</p>
+          </header>
+          <div class="dash-svc-grid">
+            <article class="dash-svc-card">
+              <h3 class="dash-svc-card-title">Bill payments</h3>
+              <p class="dash-svc-card-text">Pay utilities &amp; mobile — coming soon.</p>
+              <span class="dash-svc-card-badge">Soon</span>
+            </article>
+            <article class="dash-svc-card">
+              <h3 class="dash-svc-card-title">Scheduled transfers</h3>
+              <p class="dash-svc-card-text">Automate recurring sends — coming soon.</p>
+              <span class="dash-svc-card-badge">Soon</span>
+            </article>
+            <article class="dash-svc-card dash-svc-card--action">
+              <h3 class="dash-svc-card-title">Cards &amp; limits</h3>
+              <p class="dash-svc-card-text">Virtual debit cards, daily &amp; monthly caps, freeze anytime.</p>
+              <a class="dash-svc-card-link" href="#dash-more-services">Open cards</a>
+            </article>
+            <article class="dash-svc-card">
+              <h3 class="dash-svc-card-title">Savings pots</h3>
+              <p class="dash-svc-card-text">Round-up &amp; goals — coming soon.</p>
+              <span class="dash-svc-card-badge">Soon</span>
+            </article>
+            <article class="dash-svc-card">
+              <h3 class="dash-svc-card-title">In-app support</h3>
+              <p class="dash-svc-card-text">Secure chat with support — coming soon.</p>
+              <span class="dash-svc-card-badge">Soon</span>
+            </article>
+            <article class="dash-svc-card dash-svc-card--action">
+              <h3 class="dash-svc-card-title">Passkeys &amp; biometrics</h3>
+              <p class="dash-svc-card-text">Face ID, Touch ID, or Windows Hello for sign-in and optional send confirmation.</p>
+              <a class="dash-svc-card-link dash-svc-card-link--ghost" href="#dash-more-services">Open settings</a>
+            </article>
+            <article class="dash-svc-card dash-svc-card--action">
+              <h3 class="dash-svc-card-title">Transfers &amp; IBAN</h3>
+              <p class="dash-svc-card-text">Send PKR to any {{ BANK_NAME }} account or matching IBAN.</p>
+              <a class="dash-svc-card-link" href="{% url 'banking:payment' %}">Send payment</a>
+            </article>
+            <article class="dash-svc-card dash-svc-card--action">
+              <h3 class="dash-svc-card-title">Statements &amp; activity</h3>
+              <p class="dash-svc-card-text">Full timeline, balances after each move, save sent receipts.</p>
+              <a class="dash-svc-card-link" href="{% url 'banking:history' %}">Open activity</a>
+            </article>
+            <article class="dash-svc-card">
+              <h3 class="dash-svc-card-title">Install as app</h3>
+              <p class="dash-svc-card-text">Add to Home Screen or use Install app from the browser menu for a PWA-style icon.</p>
+              <span class="dash-svc-card-badge dash-svc-card-badge--soft">PWA</span>
+            </article>
+          </div>
+        </section>
+      </div>
     </div>
-
-    <aside class="dash-column dash-column--feed">
-      <section class="dash-panel dash-feed" aria-labelledby="dash-feed-title">
-        <div class="dash-feed-head">
-          <div>
-            <h2 id="dash-feed-title" class="dash-panel-title">Recent movement</h2>
-            <p class="dash-panel-desc">Latest lines on your account.</p>
-          </div>
-          <a class="dash-feed-link" href="{% url 'banking:history' %}">All activity</a>
-        </div>
-        {% if recent %}
-          <ul class="dash-timeline">
-            {% for t in recent %}
-              <li class="dash-timeline-item">
-                <div class="dash-timeline-dot" aria-hidden="true"></div>
-                <div class="dash-timeline-body">
-                  <div class="dash-timeline-meta">
-                    <time class="dash-timeline-when">{{ t.created_at|date:"M j, H:i" }}</time>
-                    {% if t.kind == "credit" %}
-                      <span class="badge badge-credit">Credit</span>
-                    {% elif t.kind == "debit" %}
-                      <span class="badge badge-debit">Debit</span>
-                    {% elif t.kind == "payment_sent" %}
-                      <span class="badge badge-payment_sent">Sent</span>
-                    {% else %}
-                      <span class="badge badge-payment_received">Received</span>
-                    {% endif %}
-                  </div>
-                  <div class="dash-timeline-amt">
-                    <span class="dash-amt">{% if t.kind == "credit" or t.kind == "payment_received" %}+{% else %}−{% endif %}{{ t.amount }}</span>
-                    <button type="button" class="dash-amt-eye" aria-label="Hide or show amount" aria-pressed="false" title="Hide amount">
-                      <svg class="dash-svg-eye dash-svg-eye--on" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                      <svg class="dash-svg-eye dash-svg-eye--off" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" hidden><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18 18 0 0 1 5-6M9.9 4.2A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.2 3.2"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/></svg>
-                    </button>
-                  </div>
-                </div>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p class="dash-feed-empty">No transactions yet. Use Credit or Send payment to get started.</p>
-        {% endif %}
-      </section>
-    </aside>
   </div>
 </div>
 <script>
-  (function () {
-    var b = document.getElementById("dash-mask-balance");
-    if (b) {
-      var m = b.querySelector(".dash-wallet-masked");
-      var s = b.querySelector(".dash-wallet-shown");
-      b.addEventListener("click", function () {
-        var revealed = b.getAttribute("aria-pressed") === "true";
-        if (revealed) {
-          b.setAttribute("aria-pressed", "false");
-          if (m) m.hidden = false;
-          if (s) s.hidden = true;
-        } else {
-          b.setAttribute("aria-pressed", "true");
-          if (m) m.hidden = true;
-          if (s) s.hidden = false;
-        }
-      });
+(function () {
+  var wallet = document.getElementById("dash-wallet");
+  var shown = document.getElementById("dash-wallet-amt-shown");
+  var mask = document.getElementById("dash-wallet-amt-mask");
+
+  function setRevealed(reveal) {
+    if (!shown || !mask) return;
+    if (reveal) {
+      shown.hidden = false;
+      mask.hidden = true;
+    } else {
+      shown.hidden = true;
+      mask.hidden = false;
     }
-    document.querySelectorAll(".dash-amt-eye").forEach(function (btn) {
-      var row = btn.closest(".dash-timeline-amt");
-      if (!row) return;
-      var amt = row.querySelector(".dash-amt");
-      if (!amt) return;
-      var full = amt.textContent.trim();
-      btn.addEventListener("click", function () {
-        var hidden = btn.getAttribute("aria-pressed") === "true";
-        if (hidden) {
-          amt.textContent = full;
-          btn.setAttribute("aria-pressed", "false");
-          btn.setAttribute("title", "Hide amount");
-          row.querySelector(".dash-svg-eye--on").removeAttribute("hidden");
-          row.querySelector(".dash-svg-eye--off").setAttribute("hidden", "");
-        } else {
-          amt.textContent = "••••";
-          btn.setAttribute("aria-pressed", "true");
-          btn.setAttribute("title", "Show amount");
-          row.querySelector(".dash-svg-eye--on").setAttribute("hidden", "");
-          row.querySelector(".dash-svg-eye--off").removeAttribute("hidden");
-        }
-      });
+  }
+
+  var revealed = false;
+  function toggleWallet() {
+    revealed = !revealed;
+    setRevealed(revealed);
+  }
+  setRevealed(false);
+
+  if (wallet) {
+    wallet.addEventListener("click", function (e) {
+      e.preventDefault();
+      toggleWallet();
     });
-  })();
+    wallet.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggleWallet();
+      }
+    });
+  }
+})();
 </script>
 {% endblock %}

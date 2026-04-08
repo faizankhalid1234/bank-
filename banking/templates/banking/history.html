@@ -1,82 +1,157 @@
 {% extends "banking/base.html" %}
 {% block title %}Activity · {{ BANK_NAME }}{% endblock %}
 {% block content %}
-<section class="card">
-  <div class="split">
+<div class="activity-page">
+  <header class="activity-page-head">
     <div>
-      <h1 style="margin-bottom:0.35rem">Activity &amp; receipts</h1>
-      <p class="lead" style="margin:0">Every credit, debit, and transfer in one place. Filter to see saved payment receipts only.</p>
+      <h1 class="activity-page-title">Activity</h1>
+      <p class="activity-page-lead muted">Credits, debits, and transfers — same list as your sent-payment timeline. Open a sent row’s receipt anytime.</p>
     </div>
-    <div class="actions" style="margin:0;grid-template-columns:1fr;max-width:200px">
+    <div class="activity-page-filters">
       {% if saved_only %}
-        <a class="btn btn-ghost btn-block" href="{% url 'banking:history' %}">Show all</a>
+        <a class="btn btn-ghost" href="{% url 'banking:history' %}">Show all</a>
       {% else %}
-        <a class="btn btn-ghost btn-block" href="{% url 'banking:history' %}?saved=1">Saved only</a>
+        <a class="btn btn-ghost" href="{% url 'banking:history' %}?saved=1">Saved only</a>
       {% endif %}
     </div>
-  </div>
+  </header>
 
-  <div class="table-wrap">
-    <table class="tx">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Detail</th>
-          <th>Type</th>
-          <th>Amount</th>
-          <th>Balance after</th>
-          <th>Saved</th>
-        </tr>
-      </thead>
-      <tbody>
+  <section class="activity-feed-card" aria-label="Transaction timeline">
+    <div class="activity-feed-head">
+      <h2 class="activity-feed-title">Recent movement</h2>
+      <span class="activity-feed-meta muted">{{ transactions|length }} entr{{ transactions|length|pluralize:"y,ies" }}</span>
+    </div>
+    {% if transactions %}
+      <ul class="activity-timeline">
         {% for t in transactions %}
-          <tr>
-            <td class="muted">{{ t.created_at|date:"Y-m-d H:i" }}</td>
-            <td>
-              {{ t.description|default:"—" }}
-              {% if t.kind == "payment_sent" %}
-                <div class="muted" style="font-size:0.8rem;margin-top:0.2rem">→ {{ t.counterparty_account }}</div>
-              {% elif t.kind == "payment_received" %}
-                <div class="muted" style="font-size:0.8rem;margin-top:0.2rem">← {{ t.counterparty_account }}</div>
-              {% endif %}
-            </td>
-            <td>
-              {% if t.kind == "credit" %}
-                <span class="badge badge-credit">Credit</span>
-              {% elif t.kind == "debit" %}
-                <span class="badge badge-debit">Debit</span>
-              {% elif t.kind == "payment_sent" %}
-                <span class="badge badge-payment_sent">Sent</span>
-              {% else %}
-                <span class="badge badge-payment_received">Received</span>
-              {% endif %}
-            </td>
-            <td style="font-weight:600">
-              {% if t.kind == "credit" or t.kind == "payment_received" %}+{% else %}−{% endif %}{{ t.amount }}
-            </td>
-            <td>{{ t.balance_after }}</td>
-            <td>
-              {% if t.kind == "payment_sent" %}
-                {% if t.user_saved %}
-                  <form method="post" action="{% url 'banking:unsave_receipt' t.pk %}" style="display:inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-ghost" style="padding:0.35rem 0.6rem;font-size:0.8rem">Remove</button>
-                  </form>
+          <li class="activity-timeline-item">
+            <div class="activity-timeline-main">
+              <time class="activity-timeline-time" datetime="{{ t.created_at|date:'c' }}">{{ t.created_at|date:"M j, H:i" }}</time>
+              <div class="activity-timeline-badges">
+                {% if t.kind == "credit" %}
+                  <span class="activity-badge activity-badge--credit">Credit</span>
+                {% elif t.kind == "debit" %}
+                  <span class="activity-badge activity-badge--debit">Debit</span>
+                {% elif t.kind == "payment_sent" %}
+                  <span class="activity-badge activity-badge--sent">Sent</span>
                 {% else %}
-                  <a class="btn btn-ghost" style="padding:0.35rem 0.6rem;font-size:0.8rem" href="{% url 'banking:receipt' t.pk %}">Save…</a>
+                  <span class="activity-badge activity-badge--received">Received</span>
                 {% endif %}
-              {% else %}
-                —
+                {% if t.kind == "payment_sent" %}
+                  <a class="activity-receipt-link" href="{% url 'banking:receipt' t.pk %}">Receipt</a>
+                {% endif %}
+              </div>
+              {% if t.description %}
+                <p class="activity-timeline-note muted">{{ t.description }}{% if t.counterparty_account %} · {% if t.kind == "payment_sent" %}→{% else %}←{% endif %} {{ t.counterparty_account }}{% endif %}</p>
+              {% elif t.counterparty_account %}
+                <p class="activity-timeline-note muted">{% if t.kind == "payment_sent" %}To{% else %}From{% endif %} {{ t.counterparty_account }}</p>
               {% endif %}
-            </td>
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="6" class="muted">No transactions to show yet.</td>
-          </tr>
+            </div>
+            <div class="activity-timeline-amt-wrap">
+              <button type="button" class="activity-amt-eye no-print" aria-label="Hide or show amount" aria-pressed="false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <span class="activity-amt activity-amt-shown">
+                {% if t.kind == "credit" or t.kind == "payment_received" %}+{% else %}−{% endif %}{{ t.amount }}
+              </span>
+              <span class="activity-amt activity-amt-mask" hidden>••••</span>
+            </div>
+          </li>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
+      </ul>
+    {% else %}
+      <p class="activity-feed-empty muted">No transactions yet. Send a payment, or ask staff to post a credit/debit in admin.</p>
+    {% endif %}
+  </section>
+
+  <section class="card activity-detail-card">
+    <h2 class="activity-detail-title">Full detail</h2>
+    <div class="table-wrap">
+      <table class="tx">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Detail</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Balance after</th>
+            <th>Saved</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in transactions %}
+            <tr>
+              <td class="muted">{{ t.created_at|date:"Y-m-d H:i" }}</td>
+              <td>
+                {{ t.description|default:"—" }}
+                {% if t.kind == "payment_sent" %}
+                  <div class="muted" style="font-size:0.8rem;margin-top:0.2rem">→ {{ t.counterparty_account }}</div>
+                {% elif t.kind == "payment_received" %}
+                  <div class="muted" style="font-size:0.8rem;margin-top:0.2rem">← {{ t.counterparty_account }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if t.kind == "credit" %}
+                  <span class="badge badge-credit">Credit</span>
+                {% elif t.kind == "debit" %}
+                  <span class="badge badge-debit">Debit</span>
+                {% elif t.kind == "payment_sent" %}
+                  <span class="badge badge-payment_sent">Sent</span>
+                {% else %}
+                  <span class="badge badge-payment_received">Received</span>
+                {% endif %}
+              </td>
+              <td style="font-weight:600">
+                {% if t.kind == "credit" or t.kind == "payment_received" %}+{% else %}−{% endif %}{{ t.amount }}
+              </td>
+              <td>{{ t.balance_after }}</td>
+              <td>
+                {% if t.kind == "payment_sent" %}
+                  {% if t.user_saved %}
+                    <form method="post" action="{% url 'banking:unsave_receipt' t.pk %}" style="display:inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-ghost" style="padding:0.35rem 0.6rem;font-size:0.8rem">Remove</button>
+                    </form>
+                  {% else %}
+                    <a class="btn btn-ghost" style="padding:0.35rem 0.6rem;font-size:0.8rem" href="{% url 'banking:receipt' t.pk %}">Save…</a>
+                  {% endif %}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="muted">No transactions to show yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script>
+(function () {
+  document.querySelectorAll(".activity-timeline-item").forEach(function (row) {
+    var btn = row.querySelector(".activity-amt-eye");
+    var amt = row.querySelector(".activity-amt-shown");
+    var hid = row.querySelector(".activity-amt-mask");
+    if (!btn || !amt || !hid) return;
+    btn.addEventListener("click", function () {
+      if (amt.hidden) {
+        amt.hidden = false;
+        hid.hidden = true;
+        btn.setAttribute("aria-pressed", "false");
+      } else {
+        amt.hidden = true;
+        hid.hidden = false;
+        btn.setAttribute("aria-pressed", "true");
+      }
+    });
+  });
+})();
+</script>
 {% endblock %}

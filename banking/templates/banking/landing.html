@@ -1,37 +1,143 @@
 {% extends "banking/base.html" %}
 {% block title %}Welcome · {{ BANK_NAME }}{% endblock %}
+{% block main_class %}landing-main{% endblock %}
 {% block content %}
-<div class="hero-grid">
-  <section class="card landing-hero">
-    <h1>Money moves beautifully at {{ BANK_NAME }}.</h1>
-    <p>Crystal-clear balances, instant payments between AlyBank accounts, credit and debit tools, and a statement you can actually read — on phone, tablet, or desktop.</p>
-    <ul class="feature-list">
-      <li>Send payments with a clear debit confirmation and optional saved receipt.</li>
-      <li>Credit or debit your wallet for deposits and withdrawals.</li>
-      <li>Light and dark themes tuned for long sessions.</li>
-    </ul>
-    <div class="actions" style="margin-top:1.5rem;max-width:420px">
-      <a class="btn btn-primary btn-block" href="{% url 'banking:register' %}">Create your account</a>
-      <a class="btn btn-ghost btn-block" href="{% url 'banking:login' %}">Already banking? Log in</a>
+<div class="landing-stack">
+  {# —— Hero —— #}
+  <section class="landing-hero" id="landing-hero" aria-label="Introduction">
+    <div class="landing-hero-grid">
+      <div class="landing-hero-copy">
+        <p class="landing-eyebrow">Open-source demo</p>
+        <h1 class="landing-hero-title">Banking that feels calm, clear, and in your control.</h1>
+        <p class="landing-hero-lead">
+          <strong>{{ BANK_NAME }}</strong> is a full-stack <strong>portfolio playground</strong>: virtual cards, passkeys-ready flows, IBAN transfers, activity &amp; CSV exports, and a PWA-friendly shell — so you can fork, run locally, and experiment. <strong>Not a licensed institution; no real money.</strong>
+        </p>
+        <ul class="landing-tags" aria-label="Stack">
+          <li>Open source</li>
+          <li>MIT-style demo</li>
+          <li>Django 5</li>
+          <li>SQLite</li>
+          <li>Templates</li>
+          <li>WebAuthn-ready</li>
+        </ul>
+        <div class="landing-hero-cta">
+          <a class="landing-btn landing-btn--primary" href="{% url 'banking:register' %}">Get started free</a>
+          <a class="landing-btn landing-btn--outline" href="{% url 'banking:login' %}">I already have an account</a>
+        </div>
+        <div class="landing-hero-foot">
+          <a href="https://github.com/faizankhalid1234" target="_blank" rel="noopener noreferrer">Star &amp; fork on GitHub ↗</a>
+          <a href="https://portfolio-faizan-topaz.vercel.app/" target="_blank" rel="noopener noreferrer">Live portfolio →</a>
+        </div>
+      </div>
+      <div class="landing-hero-visual">
+        <div class="landing-wallet" aria-hidden="true">
+          <div class="landing-wallet-glow"></div>
+          <div class="landing-wallet-inner">
+            <div class="landing-wallet-head">
+              <span class="landing-wallet-brand">{{ BANK_NAME }} wallet</span>
+              <span class="landing-wallet-grid-ico">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" opacity="0.85"/>
+                  <rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" opacity="0.85"/>
+                  <rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" opacity="0.85"/>
+                  <rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4" opacity="0.85"/>
+                </svg>
+              </span>
+            </div>
+            <p class="landing-wallet-bal">PKR ●●●●●●●●</p>
+            <p class="landing-wallet-hint">Tap through the app to reveal your real demo balance.</p>
+            <div class="landing-wallet-card">
+              <div class="landing-wallet-card-top">
+                <span>Virtual card</span>
+                <span class="landing-wallet-active">Active</span>
+              </div>
+              <p class="landing-wallet-pan">●●●● ●●●● ●●●● 4242</p>
+              <p class="landing-wallet-card-foot">Limits · freeze · demo pay — all in Cards</p>
+            </div>
+            <div class="landing-wallet-pills">
+              <span>Passkeys</span><span>IBAN</span><span>CSV</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
-  <aside class="card" style="display:flex;flex-direction:column;justify-content:center">
-    <h2 style="margin-top:0;font-size:1.25rem">Why it feels different</h2>
-    <p class="lead" style="margin-bottom:0">Soft glass surfaces, confident typography, and responsive grids keep every action one tap away — whether you are on a narrow phone or a wide laptop.</p>
-    <div class="meta-row" style="margin-top:1.25rem">
-      <div class="meta-item">
-        <div class="k">Bank</div>
-        <div class="v">{{ BANK_NAME }}</div>
-      </div>
-      <div class="meta-item">
-        <div class="k">Sample account</div>
-        <div class="v">1000000000</div>
-      </div>
-      <div class="meta-item" style="grid-column:1/-1">
-        <div class="k">Sample IBAN</div>
-        <div class="v">ALYBANK10000000000</div>
+
+  {# —— Author —— #}
+  <section class="landing-author-wrap" id="author" aria-labelledby="landing-author-heading">
+    <div class="landing-author-card">
+      <div class="landing-author-avatar" aria-hidden="true">FK</div>
+      <div class="landing-author-body">
+        <p class="landing-author-label">Technical</p>
+        <h2 id="landing-author-heading" class="landing-author-name">Faizan Khalid</h2>
+        <p class="landing-author-bio">
+          I built {{ BANK_NAME }} to showcase how far you can take a credible banking UI in the open — readable typography, dark-first layout, and real flows (not just mock screens). Explore the live app, read the code, and treat it as a learning sandbox: it is not a licensed institution and holds no real money.
+        </p>
       </div>
     </div>
-  </aside>
+    <div class="landing-why">
+      <h3 class="landing-why-title">Why this project exists</h3>
+      <p class="landing-why-p">
+        Most portfolio pieces stop at a single screen. {{ BANK_NAME }} goes further: authentication, a ledger-style transfer path, exports, and clear customer flows — the kinds of seams you hit in real product work, packaged as a cohesive demo you can run locally.
+      </p>
+      <p class="landing-why-p">
+        Use it to study patterns, borrow ideas for your own apps, or show recruiters a live link that actually does something when you click around. Contributions and feedback are welcome; the goal is curiosity, not compliance-grade banking.
+      </p>
+    </div>
+  </section>
+
+  {# —— Explore grid —— #}
+  <section class="landing-explore" id="product" aria-labelledby="landing-explore-title">
+    <h2 id="landing-explore-title" class="landing-explore-title">What you can explore</h2>
+    <p class="landing-explore-sub">
+      Sign in or open an account — core paths are implemented end-to-end in this demo. Each area maps to real views and the database (demo data only).
+    </p>
+    <div class="landing-explore-grid">
+      <article class="landing-tile">
+        <h3 class="landing-tile-title">Virtual cards</h3>
+        <p class="landing-tile-text">Create demo virtual debit cards, set daily and monthly spend limits, freeze or unfreeze anytime, and run a simulated card payment that debits your main balance.</p>
+      </article>
+      <article class="landing-tile">
+        <h3 class="landing-tile-title">Biometric login &amp; payments</h3>
+        <p class="landing-tile-text">Use WebAuthn passkeys — Face ID, Touch ID, or Windows Hello — for passwordless sign-in. Optionally confirm transfers with your passkey instead of a one-time code (enable in Settings).</p>
+      </article>
+      <article class="landing-tile">
+        <h3 class="landing-tile-title">Transfers &amp; IBAN</h3>
+        <p class="landing-tile-text">Send money by account number or {{ BANK_NAME }} IBAN, preview activity after you pay, save frequent recipients as beneficiaries, and get a receipt for sent payments.</p>
+      </article>
+      <article class="landing-tile">
+        <h3 class="landing-tile-title">Statements &amp; export</h3>
+        <p class="landing-tile-text">Browse your activity by timeline and balance-after rows — handy for demos and portfolio walkthroughs; CSV export labels are surfaced in the UI.</p>
+      </article>
+      <article class="landing-tile">
+        <h3 class="landing-tile-title">OTP verification</h3>
+        <p class="landing-tile-text">Sign up with email and phone, confirm with a 6-digit code (demo-friendly; never ship OTP hints in production APIs).</p>
+      </article>
+      <article class="landing-tile">
+        <h3 class="landing-tile-title">Install as an app (PWA)</h3>
+        <p class="landing-tile-text">Add {{ BANK_NAME }} to your home screen or desktop from the browser — standalone icon, theme toggle, feels closer to a native banking app.</p>
+      </article>
+      <article class="landing-tile">
+        <h3 class="landing-tile-title">Secure sessions</h3>
+        <p class="landing-tile-text">Django sessions, hashed passwords, and login-required routes — customer areas stay behind authentication in this demo.</p>
+      </article>
+      <article class="landing-tile">
+        <h3 class="landing-tile-title">Admin console (demo)</h3>
+        <p class="landing-tile-text">Use Django admin to inspect models and balances — for portfolio demos only, not real operations.</p>
+      </article>
+    </div>
+  </section>
+
+  {# —— CTA —— #}
+  <section class="landing-cta" aria-label="Get started">
+    <h2 class="landing-cta-title">Ready to click through?</h2>
+    <p class="landing-cta-text">
+      Create a demo account in seconds, or sign in if you already have one. The codebase is on GitHub whenever you want to peek under the hood.
+    </p>
+    <div class="landing-cta-btns">
+      <a class="landing-btn landing-btn--primary" href="{% url 'banking:register' %}">Open your demo account</a>
+      <a class="landing-btn landing-btn--outline" href="https://github.com/faizankhalid1234" target="_blank" rel="noopener noreferrer">Browse the repo</a>
+    </div>
+  </section>
 </div>
 {% endblock %}

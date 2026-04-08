@@ -4,11 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods, require_POST
 
-from .forms import AlyAuthForm, AmountForm, PaymentForm, RegisterForm
+from .forms import AlyAuthForm, PaymentForm, RegisterForm
 from .models import BankAccount, Transaction
-from .services import apply_credit, apply_debit, ensure_bank_account, find_recipient, transfer
+from .services import ensure_bank_account, find_recipient, transfer
 
 
 def landing(request):
@@ -46,6 +47,13 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             ensure_bank_account(user)
+            next_url = request.POST.get("next") or request.GET.get("next")
+            if next_url and url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return redirect(next_url)
             return redirect("banking:dashboard")
     else:
         form = AlyAuthForm()
@@ -54,47 +62,9 @@ def login_view(request):
 
 @login_required
 def dashboard(request):
+    """Dashboard is only for signed-in users (``@login_required`` → ``LOGIN_URL``)."""
     account = ensure_bank_account(request.user)
-    recent = account.transactions.all()[:8]
-    return render(
-        request,
-        "banking/dashboard.html",
-        {"account": account, "recent": recent},
-    )
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def credit_view(request):
-    account = ensure_bank_account(request.user)
-    if request.method == "POST":
-        form = AmountForm(request.POST)
-        if form.is_valid():
-            apply_credit(account, form.cleaned_data["amount"], form.cleaned_data.get("description") or "")
-            messages.success(request, "Amount credited successfully.")
-            return redirect("banking:dashboard")
-    else:
-        form = AmountForm()
-    return render(request, "banking/credit.html", {"form": form, "account": account})
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def debit_view(request):
-    account = ensure_bank_account(request.user)
-    if request.method == "POST":
-        form = AmountForm(request.POST)
-        if form.is_valid():
-            try:
-                apply_debit(account, form.cleaned_data["amount"], form.cleaned_data.get("description") or "")
-            except ValueError:
-                messages.error(request, "Insufficient balance for this debit.")
-                return render(request, "banking/debit.html", {"form": form, "account": account})
-            messages.success(request, "Amount debited successfully.")
-            return redirect("banking:dashboard")
-    else:
-        form = AmountForm()
-    return render(request, "banking/debit.html", {"form": form, "account": account})
+    return render(request, "banking/dashboard.html", {"account": account})
 
 
 @login_required
@@ -131,15 +101,43 @@ def payment_view(request):
 @login_required
 def receipt(request, pk):
     account = ensure_bank_account(request.user)
-    tx = get_object_or_404(Transaction, pk=pk, account=account)
-    return render(request, "banking/receipt.html", {"tx": tx, "account": account})
+    tx = get_object_or_404(
+        Transaction,
+        pk=pk,
+        account=account,
+        kind=Transaction.Kind.PAYMENT_SENT,
+    )
+    recipient = (
+        BankAccount.objects.filter(account_number=tx.counterparty_account)
+        .select_related("user")
+        .first()
+    )
+    recipient_label = (
+        (recipient.user.get_full_name() or recipient.user.username)
+        if recipient
+        else f"Account {tx.counterparty_account}"
+    )
+    return render(
+        request,
+        "banking/receipt.html",
+        {
+            "tx": tx,
+            "account": account,
+            "recipient_label": recipient_label,
+        },
+    )
 
 
 @login_required
 @require_POST
 def save_receipt(request, pk):
     account = ensure_bank_account(request.user)
-    tx = get_object_or_404(Transaction, pk=pk, account=account)
+    tx = get_object_or_404(
+        Transaction,
+        pk=pk,
+        account=account,
+        kind=Transaction.Kind.PAYMENT_SENT,
+    )
     tx.user_saved = True
     tx.save(update_fields=["user_saved"])
     messages.success(request, "Receipt saved to your list.")
@@ -164,7 +162,12 @@ def history(request):
 @require_POST
 def unsave_receipt(request, pk):
     account = ensure_bank_account(request.user)
-    tx = get_object_or_404(Transaction, pk=pk, account=account)
+    tx = get_object_or_404(
+        Transaction,
+        pk=pk,
+        account=account,
+        kind=Transaction.Kind.PAYMENT_SENT,
+    )
     tx.user_saved = False
     tx.save(update_fields=["user_saved"])
     messages.info(request, "Removed from saved receipts.")

@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:banking_bankaccount_changelist' %}">{% trans 'Bank accounts' %}</a>
+  &rsaquo; {% trans 'Credit / debit' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{% trans "Credit or debit a customer account" %}</h1>
+<p class="help">
+  Select the customer account, enter the amount in PKR, and choose credit or debit.
+  The account balance and each transaction’s <strong>balance after</strong> value are updated automatically.
+  Customers cannot post credits or debits from the public website — only staff here.
+</p>
+
+<form method="post" id="adjust-ledger-form">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <p class="errornote">{{ form.non_field_errors }}</p>
+  {% endif %}
+  <fieldset class="module aligned">
+    {% for field in form %}
+      <div class="form-row">
+        {{ field.errors }}
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      </div>
+    {% endfor %}
+  </fieldset>
+  <div class="submit-row">
+    <input type="submit" class="default" value="{% trans 'Apply to ledger' %}">
+    <a href="{% url 'admin:banking_bankaccount_changelist' %}" class="button cancel-link">{% trans 'Cancel' %}</a>
+  </div>
+</form>
+{% endblock %}

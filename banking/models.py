@@ -1,3 +1,4 @@
+import uuid
 from decimal import Decimal
 
 from django.conf import settings
@@ -66,3 +67,18 @@ def iban_for_account_number(account_number: str) -> str:
     if account_number == "1000000000":
         return "ALYBANK10000000000"
     return f"ALYBANK{account_number}"
+
+
+class PendingSignup(models.Model):
+    """Holds registration data until OTP is verified (demo: OTP also returned in API)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    username = models.CharField(max_length=150)
+    email = models.EmailField(blank=True, default="")
+    password_hash = models.CharField(max_length=128)
+    otp_hash = models.CharField(max_length=64)
+    expires_at = models.DateTimeField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]

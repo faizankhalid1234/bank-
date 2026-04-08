@@ -21,7 +21,8 @@
   </script>
 </head>
 <body>
-  <div class="shell">
+  <div class="page-root">
+  <div class="shell shell--stretch">
     <header class="topbar">
       <a href="{% url 'banking:landing' %}" class="brand">
         <span class="brand-mark" aria-hidden="true">A</span>
@@ -37,8 +38,8 @@
             <button type="submit" class="link">Log out</button>
           </form>
         {% else %}
-          <a href="{% url 'banking:login' %}">Log in</a>
-          <a href="{% url 'banking:register' %}">Open account</a>
+          <a href="{% url 'banking:login' %}">Sign in</a>
+          <a href="{% url 'banking:register' %}" class="nav-open-account">Open account</a>
         {% endif %}
         <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme">
           <span id="theme-icon">◐</span>
@@ -55,17 +56,65 @@
       </ul>
     {% endif %}
 
-    <main>
+    <main class="{% block main_class %}{% endblock %}">
       {% block content %}{% endblock %}
     </main>
+  </div>
 
-    <p class="footer-note">{{ BANK_TAGLINE }} · Demo banking UI — not a real financial institution.</p>
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div class="site-footer-brand">
+        <a href="{% url 'banking:landing' %}" class="site-footer-logo">
+          <span class="brand-mark" aria-hidden="true">A</span>
+          <span>{{ BANK_NAME }}</span>
+        </a>
+        <p class="site-footer-tagline">{{ BANK_TAGLINE }}</p>
+        <p class="site-footer-disclaimer">Demo banking UI — not a real financial institution.</p>
+      </div>
+
+      <div class="site-footer-col">
+        <h3 class="site-footer-heading">Product</h3>
+        <ul class="site-footer-links">
+          <li><a href="{% url 'banking:landing' %}">Home</a></li>
+          <li><a href="{% url 'banking:landing' %}#product">Features</a></li>
+          <li><a href="{% url 'banking:register' %}">Open account</a></li>
+          <li><a href="{% url 'banking:login' %}">Log in</a></li>
+          {% if user.is_authenticated %}
+            <li><a href="{% url 'banking:dashboard' %}">Dashboard</a></li>
+            <li><a href="{% url 'banking:payment' %}">Payments</a></li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="site-footer-col">
+        <h3 class="site-footer-heading">Contact</h3>
+        <ul class="site-footer-contact">
+          <li><span class="site-footer-contact-label">Name</span> Faizan Khalid</li>
+          <li><span class="site-footer-contact-label">Email</span> <a href="mailto:fk5095129@gmail.com">fk5095129@gmail.com</a></li>
+          <li><span class="site-footer-contact-label">Phone</span> <a href="tel:+923029655325">+92 302 9655325</a></li>
+        </ul>
+      </div>
+
+      <div class="site-footer-col">
+        <h3 class="site-footer-heading">Connect</h3>
+        <ul class="site-footer-links site-footer-links--social">
+          <li><a href="https://github.com/faizankhalid1234" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://portfolio-faizan-topaz.vercel.app/" target="_blank" rel="noopener noreferrer">Portfolio</a></li>
+          <li><a href="https://www.linkedin.com/in/faizan-khalid-developerp/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer-bar">
+      <span>© {% now "Y" %} {{ BANK_NAME }} · Built for portfolio demo</span>
+    </div>
+  </footer>
   </div>
   <script>
     (function () {
       var btn = document.getElementById("theme-toggle");
       var label = document.getElementById("theme-label");
       var icon = document.getElementById("theme-icon");
+      if (!btn || !label || !icon) return;
       function sync() {
         var d = document.documentElement.getAttribute("data-theme") === "dark";
         label.textContent = d ? "Dark" : "Light";

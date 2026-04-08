@@ -4,16 +4,25 @@
 <div class="hero-grid">
   <section class="card" style="max-width:440px;margin-inline:auto;grid-column:1/-1">
     <h1>Welcome back</h1>
-    <p class="lead">Sign in to manage payments, credits, debits, and saved receipts.</p>
-    <form method="post" novalidate>
+    <p class="lead">Sign in to send payments and view activity &amp; saved receipts.</p>
+    <form method="post" novalidate action="{% url 'banking:login' %}">
       {% csrf_token %}
+      {% if request.GET.next %}
+        <input type="hidden" name="next" value="{{ request.GET.next }}">
+      {% endif %}
       <div class="input-group">
-        <label for="id_username">Username</label>
+        <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
         {{ form.username }}
         {{ form.username.errors }}
       </div>
       <div class="input-group">
-        <label for="id_password">Password</label>
+        <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+        {{ form.email }}
+        {{ form.email.errors }}
+      </div>
+      <p class="muted" style="margin:0 0 0.75rem;font-size:0.9rem">Username or email — fill at least one.</p>
+      <div class="input-group">
+        <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
         {{ form.password }}
         {{ form.password.errors }}
       </div>
