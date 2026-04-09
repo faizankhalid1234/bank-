@@ -1,6 +1,20 @@
 const API_PREFIX = "/api";
 
+const TOKEN_KEY = "alybank_auth_token";
+
 let csrfToken = null;
+
+export function setAuthToken(token) {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+export function getAuthToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
 
 export async function ensureCsrf() {
   const r = await fetch(`${API_PREFIX}/csrf/`, { credentials: "include" });
@@ -11,6 +25,10 @@ export async function ensureCsrf() {
 
 async function apiFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...options.headers };
+  const t = getAuthToken();
+  if (t) {
+    headers.Authorization = `Token ${t}`;
+  }
   const method = (options.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD") {
     const csrf = csrfToken || (await ensureCsrf());

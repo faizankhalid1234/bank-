@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { api, ensureCsrf } from "./api.js";
+import { api, ensureCsrf, setAuthToken } from "./api.js";
 
 const AuthContext = createContext(null);
 
@@ -13,6 +13,7 @@ export function AuthProvider({ children }) {
       const data = await api.get("/me/");
       setMe(data);
     } catch {
+      setAuthToken(null);
       setMe(null);
     }
   }, []);
@@ -24,6 +25,7 @@ export function AuthProvider({ children }) {
         const data = await api.get("/me/");
         setMe(data);
       } catch {
+        setAuthToken(null);
         setMe(null);
       } finally {
         setLoading(false);
@@ -34,6 +36,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async ({ username, email, password }) => {
     await ensureCsrf();
     const data = await api.post("/auth/login/", { username, email, password });
+    if (data.token) setAuthToken(data.token);
     setMe({ user: data.user, account: data.account });
     return data;
   }, []);
@@ -49,14 +52,19 @@ export function AuthProvider({ children }) {
       pending_id: pendingId,
       otp,
     });
+    if (data.token) setAuthToken(data.token);
     setMe({ user: data.user, account: data.account });
     return data;
   }, []);
 
   const logout = useCallback(async () => {
     await ensureCsrf();
-    await api.post("/auth/logout/", {});
-    setMe(null);
+    try {
+      await api.post("/auth/logout/", {});
+    } finally {
+      setAuthToken(null);
+      setMe(null);
+    }
   }, []);
 
   const value = useMemo(

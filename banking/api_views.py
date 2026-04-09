@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import permissions, status
+from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -52,6 +53,11 @@ def _registration_otp_message(sms_key: str, masked: str) -> str:
             "Twilio Console mein recipient verify karein, ya account upgrade karein."
         )
     return "SMS nahi ja saki. Thori der baad dubara try karein ya Twilio keys check karein."
+
+
+def _auth_token_for(user: User) -> str:
+    token, _ = Token.objects.get_or_create(user=user)
+    return token.key
 
 
 def _account_payload(account: BankAccount) -> dict:
@@ -107,6 +113,7 @@ class LoginView(APIView):
         ensure_bank_account(user)
         return Response(
             {
+                "token": _auth_token_for(user),
                 "user": _user_payload(user),
                 "account": _account_payload(ensure_bank_account(user)),
             }
@@ -117,6 +124,7 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        Token.objects.filter(user=request.user).delete()
         logout(request)
         return Response({"ok": True})
 
@@ -238,6 +246,7 @@ class RegisterConfirmView(APIView):
         login(request, user)
         return Response(
             {
+                "token": _auth_token_for(user),
                 "user": _user_payload(user),
                 "account": _account_payload(account),
             },
