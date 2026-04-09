@@ -85,7 +85,9 @@ export function RegisterPage() {
                 </span>
               ))}
             </div>
-            <p className="otp-strip-note">Real SMS ke liye .env mein Twilio keys lagao.</p>
+            <p className="otp-strip-note">
+              Real SMS: Twilio par number verify + limit check. Demo tab dikhta hai jab SMS fail ho (trial/limit).
+            </p>
           </div>
         </div>
       ) : null}

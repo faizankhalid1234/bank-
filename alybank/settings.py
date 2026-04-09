@@ -115,8 +115,11 @@ LOGOUT_REDIRECT_URL = "banking:login"
 LOGIN_URL = "banking:login"
 
 # Optional: real SMS OTP via Twilio (https://www.twilio.com/). If unset, OTP is only logged on the server.
+# Account SID always starts with AC... (Console dashboard). API Key SID starts with SK... (optional auth method).
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
+TWILIO_API_KEY_SID = os.environ.get("TWILIO_API_KEY_SID", "").strip()
+TWILIO_API_KEY_SECRET = os.environ.get("TWILIO_API_KEY_SECRET", "").strip()
 TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
 
 # Optional: apna mobile yahan ek dafa likho (E.164, e.g. +923001234567). Registration form ka phone ignore ho jata hai —

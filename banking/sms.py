@@ -12,6 +12,30 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+def _twilio_configured() -> bool:
+    """True if we can call Twilio Messages API (Account SID + From + auth)."""
+    acct = (getattr(settings, "TWILIO_ACCOUNT_SID", "") or "").strip()
+    frm = (getattr(settings, "TWILIO_FROM_NUMBER", "") or "").strip()
+    if not acct or not frm:
+        return False
+    key_sid = (getattr(settings, "TWILIO_API_KEY_SID", "") or "").strip()
+    key_secret = (getattr(settings, "TWILIO_API_KEY_SECRET", "") or "").strip()
+    if key_sid and key_secret:
+        return True
+    tok = (getattr(settings, "TWILIO_AUTH_TOKEN", "") or "").strip()
+    return bool(tok)
+
+
+def _twilio_basic_auth_header() -> str:
+    key_sid = (getattr(settings, "TWILIO_API_KEY_SID", "") or "").strip()
+    key_secret = (getattr(settings, "TWILIO_API_KEY_SECRET", "") or "").strip()
+    if key_sid and key_secret:
+        raw = f"{key_sid}:{key_secret}"
+    else:
+        raw = f"{settings.TWILIO_ACCOUNT_SID}:{settings.TWILIO_AUTH_TOKEN}"
+    return f"Basic {base64.b64encode(raw.encode()).decode()}"
+
+
 def send_registration_otp(phone_e164: str, otp: str) -> tuple[bool, str, str | None]:
     """
     Try to SMS the OTP. Returns (success, user_message_key, otp_for_json_or_none).
@@ -22,17 +46,20 @@ def send_registration_otp(phone_e164: str, otp: str) -> tuple[bool, str, str | N
     When Twilio is not configured and DEBUG is True, otp_for_json_or_none is the OTP
     so the SPA can show it (demo). When DEBUG is False, OTP is never returned.
     """
-    sid = getattr(settings, "TWILIO_ACCOUNT_SID", "") or ""
-    token = getattr(settings, "TWILIO_AUTH_TOKEN", "") or ""
     from_num = getattr(settings, "TWILIO_FROM_NUMBER", "") or ""
     body = f"AlyBank verification code: {otp}. Valid 10 minutes. Do not share."
 
-    if sid and token and from_num:
+    if _twilio_configured():
         ok, err = _twilio_send(from_num, phone_e164, body)
         if ok:
             logger.info("SMS OTP sent to %s", phone_e164)
             return True, "sms_sent", None
         logger.warning("Twilio SMS failed: %s", err)
+        # In local DEBUG mode, any Twilio failure falls back to in-app OTP
+        # so registration can continue during trial limits/outages.
+        if getattr(settings, "DEBUG", False):
+            logger.info("Twilio failure fallback to demo OTP for %s", phone_e164)
+            return True, "sms_demo", otp
         if _twilio_error_code(err) == 21608:
             return False, "sms_trial_unverified", None
         return False, "sms_failed", None
@@ -50,8 +77,8 @@ def send_registration_otp(phone_e164: str, otp: str) -> tuple[bool, str, str | N
 
 
 def _twilio_send(from_number: str, to_number: str, body: str) -> tuple[bool, str]:
-    sid = settings.TWILIO_ACCOUNT_SID
-    url = f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
+    acct_sid = settings.TWILIO_ACCOUNT_SID
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{acct_sid}/Messages.json"
     data = urlencode(
         {
             "To": to_number,
@@ -60,8 +87,7 @@ def _twilio_send(from_number: str, to_number: str, body: str) -> tuple[bool, str
         }
     ).encode()
     req = Request(url, data=data, method="POST")
-    auth = base64.b64encode(f"{sid}:{settings.TWILIO_AUTH_TOKEN}".encode()).decode()
-    req.add_header("Authorization", f"Basic {auth}")
+    req.add_header("Authorization", _twilio_basic_auth_header())
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
     try:
         with urlopen(req, timeout=30) as resp:

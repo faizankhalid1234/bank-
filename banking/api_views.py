@@ -39,8 +39,8 @@ def _registration_otp_message(sms_key: str, masked: str) -> str:
         return f"Hum ne {masked} par 6 digit code bheja hai. Neeche likh dein."
     if sms_key == "sms_demo":
         return (
-            "Demo mode — Twilio SMS set nahi hai. Neeche wala 6 digit code yahin se copy karke paste karein. "
-            "Real SMS ke liye .env mein TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER bharo."
+            "Demo mode/fallback — neeche wala 6 digit code yahin se copy karke paste karein. "
+            "Twilio trial par unverified numbers ko SMS nahi jati; verify number karo ya account upgrade karo."
         )
     if sms_key == "sms_dev_console":
         return (
