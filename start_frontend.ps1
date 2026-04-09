@@ -10,7 +10,7 @@ if (-not (Test-Path $npm)) {
     exit 1
 }
 
-Write-Host "Frontend: http://localhost:5173/  (backend must be on http://127.0.0.1:8001/ — start_backend.ps1)" -ForegroundColor Green
+Write-Host "Frontend: http://localhost:5173/  (backend: http://127.0.0.1:8000/ — start_backend.ps1)" -ForegroundColor Green
 if (-not (Test-Path ".\node_modules")) {
     & $npm install
 }

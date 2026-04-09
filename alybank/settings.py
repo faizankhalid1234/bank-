@@ -1,6 +1,14 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(BASE_DIR / ".env")
+except ImportError:
+    pass
 
 SECRET_KEY = "alybank-dev-change-in-production-use-env"
 
@@ -98,10 +106,19 @@ CORS_ALLOWED_ORIGINS = [
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://localhost:8001",
-    "http://127.0.0.1:8001",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 
 LOGIN_REDIRECT_URL = "banking:dashboard"
 LOGOUT_REDIRECT_URL = "banking:login"
 LOGIN_URL = "banking:login"
+
+# Optional: real SMS OTP via Twilio (https://www.twilio.com/). If unset, OTP is only logged on the server.
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
+TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
+
+# Optional: apna mobile yahan ek dafa likho (E.164, e.g. +923001234567). Registration form ka phone ignore ho jata hai —
+# OTP seedha isi number par jayega (Twilio trial par jo number verify kiya ho wahi rakho).
+OTP_FIXED_PHONE_E164 = os.environ.get("OTP_FIXED_PHONE_E164", "").strip()

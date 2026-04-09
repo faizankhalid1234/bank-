@@ -16,4 +16,4 @@ if %errorlevel% equ 0 (
 )
 if errorlevel 1 exit /b 1
 echo.
-echo Build complete. Restart Django on port 8001 and open http://127.0.0.1:8001/
+echo Build complete. Restart Django and open http://127.0.0.1:8000/

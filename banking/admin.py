@@ -4,8 +4,15 @@ from django.shortcuts import redirect, render
 from django.urls import path
 
 from .forms import StaffLedgerAdjustmentForm
-from .models import BankAccount, PendingSignup, Transaction
+from .models import BankAccount, PendingSignup, Transaction, UserProfile
 from .services import apply_credit, apply_debit
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "phone")
+    search_fields = ("phone", "user__username", "user__email")
+    ordering = ("id",)
 
 
 @admin.register(BankAccount)
@@ -115,9 +122,9 @@ class TransactionAdmin(admin.ModelAdmin):
 
 @admin.register(PendingSignup)
 class PendingSignupAdmin(admin.ModelAdmin):
-    list_display = ("username", "email", "expires_at", "created_at")
-    search_fields = ("username", "email")
-    readonly_fields = ("id", "username", "email", "password_hash", "otp_hash", "expires_at", "created_at")
+    list_display = ("username", "email", "phone_number", "expires_at", "created_at")
+    search_fields = ("username", "email", "phone_number")
+    readonly_fields = ("id", "username", "email", "phone_number", "password_hash", "otp_hash", "expires_at", "created_at")
     ordering = ("-created_at",)
 
     def has_add_permission(self, request):

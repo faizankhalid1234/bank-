@@ -3,6 +3,7 @@ import secrets
 from datetime import timedelta
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
@@ -17,8 +18,40 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .forms import AlyAuthForm, PaymentForm, RegisterForm
-from .models import BankAccount, PendingSignup, Transaction
+from .models import BankAccount, PendingSignup, Transaction, UserProfile
+from .phone_utils import mask_phone, normalize_phone
 from .services import ensure_bank_account, find_recipient, transfer
+from .sms import send_registration_otp
+
+
+def _user_payload(user: User) -> dict:
+    prof = UserProfile.objects.filter(user=user).first()
+    return {
+        "username": user.username,
+        "first_name": user.first_name or "",
+        "email": user.email or "",
+        "phone": prof.phone if prof else "",
+    }
+
+
+def _registration_otp_message(sms_key: str, masked: str) -> str:
+    if sms_key == "sms_sent":
+        return f"Hum ne {masked} par 6 digit code bheja hai. Neeche likh dein."
+    if sms_key == "sms_demo":
+        return (
+            "Demo mode — Twilio SMS set nahi hai. Neeche wala 6 digit code yahin se copy karke paste karein. "
+            "Real SMS ke liye .env mein TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER bharo."
+        )
+    if sms_key == "sms_dev_console":
+        return (
+            "SMS service configure nahi. OTP sirf server log/terminal par hai — administrator se rabta karein."
+        )
+    if sms_key == "sms_trial_unverified":
+        return (
+            "Twilio trial restriction: jis number par OTP bhejni hai woh Twilio par verified nahi. "
+            "Twilio Console mein recipient verify karein, ya account upgrade karein."
+        )
+    return "SMS nahi ja saki. Thori der baad dubara try karein ya Twilio keys check karein."
 
 
 def _account_payload(account: BankAccount) -> dict:
@@ -74,11 +107,7 @@ class LoginView(APIView):
         ensure_bank_account(user)
         return Response(
             {
-                "user": {
-                    "username": user.username,
-                    "first_name": user.first_name or "",
-                    "email": user.email or "",
-                },
+                "user": _user_payload(user),
                 "account": _account_payload(ensure_bank_account(user)),
             }
         )
@@ -93,13 +122,21 @@ class LogoutView(APIView):
 
 
 class RegisterRequestView(APIView):
-    """Validate details, create pending signup, return OTP (demo: shown in UI at top)."""
+    """Validate details, create pending signup; SMS via Twilio, or demo OTP on screen when DEBUG."""
 
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         PendingSignup.objects.filter(expires_at__lt=timezone.now()).delete()
-        form = RegisterForm(request.data)
+        fixed = (getattr(settings, "OTP_FIXED_PHONE_E164", None) or "").strip()
+        payload = request.data
+        if fixed:
+            payload = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
+            payload["phone"] = fixed
+        np = normalize_phone(fixed if fixed else (request.data.get("phone") or ""))
+        if np:
+            PendingSignup.objects.filter(phone_number=np).delete()
+        form = RegisterForm(payload)
         if not form.is_valid():
             return Response(
                 {"detail": "Registration failed.", "errors": form.errors},
@@ -107,25 +144,34 @@ class RegisterRequestView(APIView):
             )
         cleaned = form.cleaned_data
         username = cleaned["username"]
+        phone = cleaned["phone"]
         PendingSignup.objects.filter(username=username).delete()
         pwd_hash = make_password(cleaned["password1"])
         otp = _generate_otp()
         pending = PendingSignup.objects.create(
             username=username,
             email=(cleaned.get("email") or "").strip(),
+            phone_number=phone,
             password_hash=pwd_hash,
             otp_hash=_hash_otp(otp),
             expires_at=timezone.now() + timedelta(minutes=10),
         )
-        return Response(
-            {
-                "pending_id": str(pending.id),
-                "otp": otp,
-                "expires_in": 600,
-                "message": "Enter the verification code shown at the top of the page.",
-            },
-            status=status.HTTP_200_OK,
-        )
+        _, sms_key, otp_for_client = send_registration_otp(phone, otp)
+        masked = mask_phone(phone)
+        payload = {
+            "pending_id": str(pending.id),
+            "expires_in": 600,
+            "phone_masked": masked,
+            "sms_sent": sms_key == "sms_sent",
+            "sms_demo": sms_key == "sms_demo",
+            "sms_dev_console": sms_key == "sms_dev_console",
+            "sms_failed": sms_key == "sms_failed",
+            "sms_trial_unverified": sms_key == "sms_trial_unverified",
+            "message": _registration_otp_message(sms_key, masked),
+        }
+        if otp_for_client is not None:
+            payload["otp"] = otp_for_client
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class RegisterConfirmView(APIView):
@@ -170,11 +216,18 @@ class RegisterConfirmView(APIView):
                 {"detail": "That email is already registered."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if not pending.phone_number:
+            pending.delete()
+            return Response(
+                {"detail": "Phone number is missing or signup is invalid. Start again."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
             with transaction.atomic():
                 user = User(username=pending.username, email=email)
                 user.password = pending.password_hash
                 user.save()
+                UserProfile.objects.create(user=user, phone=pending.phone_number)
                 account = ensure_bank_account(user)
                 pending.delete()
         except IntegrityError:
@@ -185,11 +238,7 @@ class RegisterConfirmView(APIView):
         login(request, user)
         return Response(
             {
-                "user": {
-                    "username": user.username,
-                    "first_name": user.first_name or "",
-                    "email": user.email or "",
-                },
+                "user": _user_payload(user),
                 "account": _account_payload(account),
             },
             status=status.HTTP_201_CREATED,
@@ -204,11 +253,7 @@ class MeView(APIView):
         u = request.user
         return Response(
             {
-                "user": {
-                    "username": u.username,
-                    "first_name": u.first_name or "",
-                    "email": u.email or "",
-                },
+                "user": _user_payload(u),
                 "account": _account_payload(account),
             }
         )
@@ -322,7 +367,8 @@ class HistoryView(APIView):
 
     def get(self, request):
         account = ensure_bank_account(request.user)
-        qs = account.transactions.all()
+        # Only this user's ledger — never mix other customers' rows
+        qs = Transaction.objects.filter(account=account).order_by("-created_at", "-id")
         saved_only = request.GET.get("saved") == "1"
         if saved_only:
             qs = qs.filter(user_saved=True)

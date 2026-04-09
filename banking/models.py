@@ -6,6 +6,23 @@ from django.db import models
 from django.db.models import Max
 
 
+class UserProfile(models.Model):
+    """Verified phone at signup (OTP)."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+    phone = models.CharField(max_length=20, db_index=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.user.username} ({self.phone})"
+
+
 class BankAccount(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -70,11 +87,12 @@ def iban_for_account_number(account_number: str) -> str:
 
 
 class PendingSignup(models.Model):
-    """Holds registration data until OTP is verified (demo: OTP also returned in API)."""
+    """Holds registration data until OTP is verified (SMS when Twilio is configured)."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=150)
     email = models.EmailField(blank=True, default="")
+    phone_number = models.CharField(max_length=20, db_index=True, default="", blank=True)
     password_hash = models.CharField(max_length=128)
     otp_hash = models.CharField(max_length=64)
     expires_at = models.DateTimeField(db_index=True)

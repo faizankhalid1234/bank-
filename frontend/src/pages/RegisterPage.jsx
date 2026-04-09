@@ -10,6 +10,7 @@ function formatRegisterErrors(data) {
   if (e.password1) parts.push(`Password: ${e.password1.join?.(" ") || e.password1}`);
   if (e.password2) parts.push(`Confirm: ${e.password2.join?.(" ") || e.password2}`);
   if (e.email) parts.push(`Email: ${e.email.join?.(" ") || e.email}`);
+  if (e.phone) parts.push(`Mobile: ${e.phone.join?.(" ") || e.phone}`);
   if (e.non_field_errors) parts.push(e.non_field_errors.join(" "));
   return parts.filter(Boolean).join(" · ") || data.detail || "Registration failed.";
 }
@@ -20,10 +21,12 @@ export function RegisterPage() {
   const [phase, setPhase] = useState("details");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password1, setPassword1] = useState("");
   const [password2, setPassword2] = useState("");
   const [pendingId, setPendingId] = useState("");
-  const [displayOtp, setDisplayOtp] = useState("");
+  const [verifyHint, setVerifyHint] = useState("");
+  const [demoOtp, setDemoOtp] = useState("");
   const [otpInput, setOtpInput] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,7 +34,8 @@ export function RegisterPage() {
   function resetAll() {
     setPhase("details");
     setPendingId("");
-    setDisplayOtp("");
+    setVerifyHint("");
+    setDemoOtp("");
     setOtpInput("");
     setError("");
   }
@@ -41,9 +45,10 @@ export function RegisterPage() {
     setError("");
     setBusy(true);
     try {
-      const data = await registerRequest({ username, email, password1, password2 });
+      const data = await registerRequest({ username, email, phone, password1, password2 });
       setPendingId(data.pending_id);
-      setDisplayOtp(data.otp);
+      setVerifyHint(data.message || "");
+      setDemoOtp(data.otp && String(data.otp).length === 6 ? String(data.otp) : "");
       setOtpInput("");
       setPhase("verify");
     } catch (err) {
@@ -69,18 +74,18 @@ export function RegisterPage() {
 
   return (
     <div className="register-page-wrap">
-      {phase === "verify" && displayOtp ? (
+      {phase === "verify" && demoOtp ? (
         <div className="otp-strip-outer">
-          <div className="otp-strip" role="status" aria-live="polite">
-            <p className="otp-strip-label">Your verification code — check here and type it below</p>
+          <div className="otp-strip otp-strip--demo" role="status" aria-live="polite">
+            <p className="otp-strip-label">Demo — yahin se code copy karein</p>
             <div className="otp-strip-digits" aria-label="Verification code">
-              {displayOtp.split("").map((ch, i) => (
+              {demoOtp.split("").map((ch, i) => (
                 <span key={i} className="otp-digit">
                   {ch}
                 </span>
               ))}
             </div>
-            <p className="otp-strip-note">Demo: code is shown on screen instead of SMS/email.</p>
+            <p className="otp-strip-note">Real SMS ke liye .env mein Twilio keys lagao.</p>
           </div>
         </div>
       ) : null}
@@ -91,9 +96,17 @@ export function RegisterPage() {
           <h1 className="auth-title">Open your demo account</h1>
           <p className="auth-sub">
             {phase === "details"
-              ? "Enter your details. We will ask for a one-time code next — you will see it at the top of this page."
-              : "Enter the 6-digit code shown in the green bar above, then confirm."}
+              ? "Jo bhi mobile number likho ge, account usi par save hoga (Twilio ke baghair demo code screen par aata hai)."
+              : demoOtp
+                ? "Neeche green box mein code hai — yahan type karein."
+                : "Jo code SMS par aaya ho woh neeche likhein."}
           </p>
+
+          {phase === "verify" && verifyHint && !demoOtp ? (
+            <div className="alert alert--info" role="status">
+              {verifyHint}
+            </div>
+          ) : null}
 
           {phase === "details" ? (
             <form className="auth-form" onSubmit={onSubmitDetails}>
@@ -121,6 +134,18 @@ export function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
+                />
+              </label>
+              <label className="field">
+                <span>Mobile number</span>
+                <input
+                  className="input"
+                  type="tel"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+923001234567"
+                  required
                 />
               </label>
               <label className="field">

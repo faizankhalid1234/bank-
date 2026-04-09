@@ -660,6 +660,12 @@ html[data-theme="light"] .landing-wallet-card {
   color: var(--success);
 }
 
+.alert--info {
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--text);
+}
+
 /* Dashboard */
 .dash-page {
   padding-bottom: 1rem;
@@ -1106,6 +1112,12 @@ html[data-theme="light"] .dash-wallet-inset {
   flex-wrap: wrap;
   align-items: flex-end;
   margin-bottom: 1rem;
+}
+
+.history-scope {
+  margin: 0.5rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
 }
 
 .history-filters {

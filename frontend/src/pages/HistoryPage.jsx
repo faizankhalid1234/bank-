@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, ensureCsrf } from "../api.js";
+import { useAuth } from "../auth.jsx";
 
 const kindLabel = {
   credit: "Credit",
@@ -10,26 +11,39 @@ const kindLabel = {
 };
 
 export function HistoryPage() {
+  const { user, account } = useAuth();
   const [savedOnly, setSavedOnly] = useState(false);
   const [rows, setRows] = useState([]);
   const [err, setErr] = useState("");
   const [busyId, setBusyId] = useState(null);
-
-  async function load() {
-    setErr("");
-    try {
-      await ensureCsrf();
-      const q = savedOnly ? "?saved=1" : "";
-      const data = await api.get(`/history/${q}`);
-      setRows(data.transactions || []);
-    } catch (e) {
-      setErr(e.message);
-    }
-  }
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setErr("");
+      setLoading(true);
+      try {
+        await ensureCsrf();
+        const q = savedOnly ? "?saved=1" : "";
+        const data = await api.get(`/history/${q}`);
+        if (!cancelled) {
+          setRows(data.transactions || []);
+        }
+      } catch (e) {
+        if (!cancelled) setErr(e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    setRows([]);
     load();
-  }, [savedOnly]);
+    return () => {
+      cancelled = true;
+    };
+  }, [savedOnly, user?.username, account?.account_number]);
 
   async function toggleSave(tx) {
     if (tx.kind !== "payment_sent") return;
@@ -42,7 +56,9 @@ export function HistoryPage() {
       } else {
         await api.post(`/receipt/${tx.id}/save/`, {});
       }
-      await load();
+      const q = savedOnly ? "?saved=1" : "";
+      const data = await api.get(`/history/${q}`);
+      setRows(data.transactions || []);
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -56,7 +72,16 @@ export function HistoryPage() {
         <div>
           <p className="form-eyebrow">Ledger</p>
           <h1 className="form-title">Activity</h1>
-          <p className="form-lead">Every movement on your demo account — newest first.</p>
+          <p className="form-lead">
+            Sirf <strong>apne account</strong> ki entries — naya sign-up ho ya &quot;Get started free&quot;, har user ko
+            sirf apna data dikhega; kisi aur customer ka activity yahan nahi aata.
+          </p>
+          {account?.account_number ? (
+            <p className="history-scope mono">
+              Account: {account.account_number}
+              {user?.username ? ` · ${user.username}` : null}
+            </p>
+          ) : null}
         </div>
         <div className="history-filters">
           <button
@@ -92,10 +117,17 @@ export function HistoryPage() {
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {loading ? (
               <tr>
                 <td colSpan={5} className="muted">
-                  No transactions yet.
+                  Loading…
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="muted">
+                  Abhi koi transaction nahi — naye account par list khali hoti hai. Jab tum payment bhejoge ya admin
+                  credit/debit karega, sirf tumhari yahi entries yahan dikhengi.
                 </td>
               </tr>
             ) : (

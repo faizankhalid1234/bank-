@@ -3,8 +3,9 @@ from decimal import Decimal
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
-
-from .models import BankAccount
+from django.db import transaction
+from .models import BankAccount, UserProfile
+from .phone_utils import normalize_phone, validate_phone_e164
 
 
 class AlyAuthForm(AuthenticationForm):
@@ -63,10 +64,24 @@ class RegisterForm(UserCreationForm):
             attrs={"class": "input", "placeholder": " ", "autocomplete": "email"}
         ),
     )
+    phone = forms.CharField(
+        label="Mobile number",
+        required=True,
+        max_length=20,
+        widget=forms.TextInput(
+            attrs={
+                "class": "input",
+                "placeholder": "+923001234567",
+                "autocomplete": "tel",
+            }
+        ),
+    )
 
     class Meta:
         model = User
         fields = ("username", "email", "password1", "password2")
+
+    field_order = ["username", "email", "phone", "password1", "password2"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -81,6 +96,23 @@ class RegisterForm(UserCreationForm):
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("An account with that email already exists.")
         return email
+
+    def clean_phone(self):
+        raw = self.cleaned_data.get("phone") or ""
+        p = normalize_phone(raw)
+        if not validate_phone_e164(p):
+            raise forms.ValidationError(
+                "Enter a valid mobile number with country code, e.g. +923001234567 or 03001234567."
+            )
+        return p
+
+    @transaction.atomic
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        if commit:
+            phone = self.cleaned_data["phone"]
+            UserProfile.objects.update_or_create(user=user, defaults={"phone": phone})
+        return user
 
 
 class PaymentForm(forms.Form):
