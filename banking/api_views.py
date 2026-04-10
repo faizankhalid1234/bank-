@@ -22,7 +22,6 @@ from .forms import AlyAuthForm, PaymentForm, RegisterForm
 from .models import BankAccount, PendingSignup, Transaction, UserProfile
 from .phone_utils import mask_phone, normalize_phone
 from .services import ensure_bank_account, find_recipient, transfer
-from .email_otp import send_registration_email_otp
 from .sms import send_registration_otp
 
 
@@ -54,24 +53,6 @@ def _registration_otp_message(sms_key: str, masked: str) -> str:
             "Twilio Console mein recipient verify karein, ya account upgrade karein."
         )
     return "SMS nahi ja saki. Thori der baad dubara try karein ya Twilio keys check karein."
-
-
-def _registration_email_otp_message(email_key: str, email_addr: str) -> str:
-    if email_key == "email_sent":
-        if "console" in (getattr(settings, "EMAIL_BACKEND", "") or "").lower():
-            return (
-                "Development: email OTP Django server terminal (console) par print hota hai. "
-                "Asli Gmail/inbox ke liye .env mein SMTP (e.g. Gmail app password) set karein."
-            )
-        return (
-            f"Hum ne {email_addr} par 6 digit email code bheja hai — "
-            "Gmail ya mail app mein inbox check karein (mobile par bhi aa sakta hai)."
-        )
-    if email_key == "email_demo":
-        return (
-            "Demo / fallback — neeche wala email code yahin se copy karein (SMTP error ya DEBUG)."
-        )
-    return "Email OTP nahi bheja ja saka. Address check karke dubara try karein."
 
 
 def _auth_token_for(user: User) -> str:
@@ -149,7 +130,7 @@ class LogoutView(APIView):
 
 
 class RegisterRequestView(APIView):
-    """Validate details; send SMS OTP + email OTP; then create pending signup until both are verified."""
+    """Validate details, create pending signup; SMS via Twilio, or demo OTP on screen when DEBUG."""
 
     permission_classes = [permissions.AllowAny]
 
@@ -172,41 +153,19 @@ class RegisterRequestView(APIView):
         cleaned = form.cleaned_data
         username = cleaned["username"]
         phone = cleaned["phone"]
-        email = (cleaned.get("email") or "").strip()
-        if not email:
-            return Response(
-                {"detail": "Valid email zaroori hai — OTP usi par jayega.", "errors": {"email": ["Enter a valid email."]}},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         PendingSignup.objects.filter(username=username).delete()
-        PendingSignup.objects.filter(email__iexact=email).delete()
         pwd_hash = make_password(cleaned["password1"])
-        sms_otp = _generate_otp()
-        email_otp = _generate_otp()
-        while email_otp == sms_otp:
-            email_otp = _generate_otp()
-
-        _, email_key, email_otp_for_client = send_registration_email_otp(email, email_otp)
-        if email_key == "email_failed":
-            return Response(
-                {
-                    "detail": "Email par code nahi bheja ja saka. Address sahi hai ya baad mein try karein.",
-                    "errors": {"email": ["Email delivery failed."]},
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        _, sms_key, otp_for_client = send_registration_otp(phone, sms_otp)
-        masked = mask_phone(phone)
+        otp = _generate_otp()
         pending = PendingSignup.objects.create(
             username=username,
-            email=email,
+            email=(cleaned.get("email") or "").strip(),
             phone_number=phone,
             password_hash=pwd_hash,
-            otp_hash=_hash_otp(sms_otp),
-            email_otp_hash=_hash_otp(email_otp),
+            otp_hash=_hash_otp(otp),
             expires_at=timezone.now() + timedelta(minutes=10),
         )
+        _, sms_key, otp_for_client = send_registration_otp(phone, otp)
+        masked = mask_phone(phone)
         payload = {
             "pending_id": str(pending.id),
             "expires_in": 600,
@@ -217,14 +176,9 @@ class RegisterRequestView(APIView):
             "sms_failed": sms_key == "sms_failed",
             "sms_trial_unverified": sms_key == "sms_trial_unverified",
             "message": _registration_otp_message(sms_key, masked),
-            "email_sent": email_key == "email_sent",
-            "email_demo": email_key == "email_demo",
-            "email_message": _registration_email_otp_message(email_key, email),
         }
         if otp_for_client is not None:
             payload["otp"] = otp_for_client
-        if email_otp_for_client is not None:
-            payload["email_otp"] = email_otp_for_client
         return Response(payload, status=status.HTTP_200_OK)
 
 
@@ -234,10 +188,9 @@ class RegisterConfirmView(APIView):
     def post(self, request):
         pending_id = request.data.get("pending_id")
         otp_raw = (request.data.get("otp") or "").strip().replace(" ", "")
-        email_otp_raw = (request.data.get("email_otp") or "").strip().replace(" ", "")
-        if not pending_id or not otp_raw or not email_otp_raw:
+        if not pending_id or not otp_raw:
             return Response(
-                {"detail": "pending_id, otp (SMS), and email_otp are required."},
+                {"detail": "pending_id and otp are required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:
@@ -255,12 +208,7 @@ class RegisterConfirmView(APIView):
             )
         if _hash_otp(otp_raw) != pending.otp_hash:
             return Response(
-                {"detail": "Wrong SMS verification code. Try again."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not pending.email_otp_hash or _hash_otp(email_otp_raw) != pending.email_otp_hash:
-            return Response(
-                {"detail": "Wrong email verification code. Try again."},
+                {"detail": "Wrong verification code. Try again."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if User.objects.filter(username__iexact=pending.username).exists():

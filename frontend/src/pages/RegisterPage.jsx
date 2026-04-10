@@ -27,9 +27,7 @@ export function RegisterPage() {
   const [pendingId, setPendingId] = useState("");
   const [verifyHint, setVerifyHint] = useState("");
   const [demoOtp, setDemoOtp] = useState("");
-  const [demoEmailOtp, setDemoEmailOtp] = useState("");
   const [otpInput, setOtpInput] = useState("");
-  const [emailOtpInput, setEmailOtpInput] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -38,9 +36,7 @@ export function RegisterPage() {
     setPendingId("");
     setVerifyHint("");
     setDemoOtp("");
-    setDemoEmailOtp("");
     setOtpInput("");
-    setEmailOtpInput("");
     setError("");
   }
 
@@ -51,15 +47,9 @@ export function RegisterPage() {
     try {
       const data = await registerRequest({ username, email, phone, password1, password2 });
       setPendingId(data.pending_id);
-      setVerifyHint(
-        [data.message, data.email_message].filter(Boolean).join(" ") || ""
-      );
+      setVerifyHint(data.message || "");
       setDemoOtp(data.otp && String(data.otp).length === 6 ? String(data.otp) : "");
-      setDemoEmailOtp(
-        data.email_otp && String(data.email_otp).length === 6 ? String(data.email_otp) : ""
-      );
       setOtpInput("");
-      setEmailOtpInput("");
       setPhase("verify");
     } catch (err) {
       setError(formatRegisterErrors(err.data) || err.message);
@@ -73,7 +63,7 @@ export function RegisterPage() {
     setError("");
     setBusy(true);
     try {
-      await registerConfirm({ pendingId, otp: otpInput, emailOtp: emailOtpInput });
+      await registerConfirm({ pendingId, otp: otpInput });
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Verification failed.");
@@ -84,43 +74,21 @@ export function RegisterPage() {
 
   return (
     <div className="register-page-wrap">
-      {phase === "verify" && (demoOtp || demoEmailOtp) ? (
+      {phase === "verify" && demoOtp ? (
         <div className="otp-strip-outer">
-          {demoOtp ? (
-            <div className="otp-strip otp-strip--demo" role="status" aria-live="polite">
-              <p className="otp-strip-label">SMS (demo) — yahin se code copy karein</p>
-              <div className="otp-strip-digits" aria-label="SMS verification code">
-                {demoOtp.split("").map((ch, i) => (
-                  <span key={i} className="otp-digit">
-                    {ch}
-                  </span>
-                ))}
-              </div>
-              <p className="otp-strip-note">
-                Real SMS: Twilio par number verify + limit check. Demo tab dikhta hai jab SMS fail ho (trial/limit).
-              </p>
+          <div className="otp-strip otp-strip--demo" role="status" aria-live="polite">
+            <p className="otp-strip-label">Demo — yahin se code copy karein</p>
+            <div className="otp-strip-digits" aria-label="Verification code">
+              {demoOtp.split("").map((ch, i) => (
+                <span key={i} className="otp-digit">
+                  {ch}
+                </span>
+              ))}
             </div>
-          ) : null}
-          {demoEmailOtp ? (
-            <div
-              className="otp-strip otp-strip--demo"
-              style={{ marginTop: demoOtp ? "0.75rem" : 0 }}
-              role="status"
-              aria-live="polite"
-            >
-              <p className="otp-strip-label">Email (demo) — yahin se code copy karein</p>
-              <div className="otp-strip-digits" aria-label="Email verification code">
-                {demoEmailOtp.split("").map((ch, i) => (
-                  <span key={i} className="otp-digit">
-                    {ch}
-                  </span>
-                ))}
-              </div>
-              <p className="otp-strip-note">
-                Real email: SMTP .env mein set karo — warna development par terminal/console par OTP dikhta hai.
-              </p>
-            </div>
-          ) : null}
+            <p className="otp-strip-note">
+              Real SMS: Twilio par number verify + limit check. Demo tab dikhta hai jab SMS fail ho (trial/limit).
+            </p>
+          </div>
         </div>
       ) : null}
 
@@ -130,13 +98,13 @@ export function RegisterPage() {
           <h1 className="auth-title">Open your demo account</h1>
           <p className="auth-sub">
             {phase === "details"
-              ? "Apna asli email aur mobile likho — SMS aur email dono par alag codes aayenge; dono ke baghair account nahi banega."
-              : demoOtp || demoEmailOtp
-                ? "Neeche demo boxes mein codes — dono fields mein likhein."
-                : "SMS wala code mobile par, email wala Gmail / inbox mein — dono yahan likhein."}
+              ? "Jo bhi mobile number likho ge, account usi par save hoga (Twilio ke baghair demo code screen par aata hai)."
+              : demoOtp
+                ? "Neeche green box mein code hai — yahan type karein."
+                : "Jo code SMS par aaya ho woh neeche likhein."}
           </p>
 
-          {phase === "verify" && verifyHint ? (
+          {phase === "verify" && verifyHint && !demoOtp ? (
             <div className="alert alert--info" role="status">
               {verifyHint}
             </div>
@@ -168,7 +136,6 @@ export function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  required
                 />
               </label>
               <label className="field">
@@ -217,7 +184,7 @@ export function RegisterPage() {
                 </div>
               ) : null}
               <label className="field">
-                <span>SMS verification code</span>
+                <span>Verification code</span>
                 <input
                   className="input otp-input"
                   inputMode="numeric"
@@ -226,21 +193,6 @@ export function RegisterPage() {
                   placeholder="000000"
                   value={otpInput}
                   onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  required
-                />
-              </label>
-              <label className="field">
-                <span>Email verification code</span>
-                <input
-                  className="input otp-input"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={8}
-                  placeholder="000000"
-                  value={emailOtpInput}
-                  onChange={(e) =>
-                    setEmailOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))
-                  }
                   required
                 />
               </label>
