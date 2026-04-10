@@ -127,3 +127,22 @@ TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
 # Optional: apna mobile yahan ek dafa likho (E.164, e.g. +923001234567). Registration form ka phone ignore ho jata hai —
 # OTP seedha isi number par jayega (Twilio trial par jo number verify kiya ho wahi rakho).
 OTP_FIXED_PHONE_E164 = os.environ.get("OTP_FIXED_PHONE_E164", "").strip()
+
+# Email OTP: SMTP when EMAIL_HOST + EMAIL_HOST_USER are set; otherwise console in DEBUG (terminal output).
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "").strip()
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1").lower() not in ("0", "false", "no")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip()
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "").strip()
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "").strip() or (
+    f"AlyBank <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "AlyBank <noreply@localhost>"
+)
+if EMAIL_HOST and EMAIL_HOST_USER:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = os.environ.get(
+        "EMAIL_BACKEND",
+        "django.core.mail.backends.console.EmailBackend"
+        if DEBUG
+        else "django.core.mail.backends.smtp.EmailBackend",
+    )

@@ -58,7 +58,7 @@ class AlyAuthForm(AuthenticationForm):
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(
-        required=False,
+        required=True,
         label="Email",
         widget=forms.EmailInput(
             attrs={"class": "input", "placeholder": " ", "autocomplete": "email"}
@@ -91,8 +91,6 @@ class RegisterForm(UserCreationForm):
 
     def clean_email(self):
         email = (self.cleaned_data.get("email") or "").strip()
-        if not email:
-            return ""
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("An account with that email already exists.")
         return email
