@@ -207,6 +207,7 @@ class RegisterRequestView(APIView):
 
         _, sms_key, otp_for_client = send_registration_otp(phone, sms_otp)
         masked = mask_phone(phone)
+        fixed_sms_to = (getattr(settings, "OTP_FIXED_PHONE_E164", None) or "").strip()
         pending = PendingSignup.objects.create(
             username=username,
             email=email,
@@ -220,6 +221,7 @@ class RegisterRequestView(APIView):
             "pending_id": str(pending.id),
             "expires_in": 600,
             "phone_masked": masked,
+            "sms_to_fixed_verified": bool(fixed_sms_to),
             "sms_sent": sms_key == "sms_sent",
             "sms_demo": sms_key == "sms_demo",
             "sms_dev_console": sms_key == "sms_dev_console",

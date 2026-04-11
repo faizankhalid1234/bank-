@@ -198,9 +198,12 @@ TWILIO_API_KEY_SID = os.environ.get("TWILIO_API_KEY_SID", "").strip()
 TWILIO_API_KEY_SECRET = os.environ.get("TWILIO_API_KEY_SECRET", "").strip()
 TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
 
-# Optional: apna mobile yahan ek dafa likho (E.164, e.g. +923001234567). Registration form ka phone ignore ho jata hai —
-# OTP seedha isi number par jayega (Twilio trial par jo number verify kiya ho wahi rakho).
-OTP_FIXED_PHONE_E164 = os.environ.get("OTP_FIXED_PHONE_E164", "").strip()
+# Twilio trial: OTP is verified E.164 par bhejo. Agar .env mein OTP_FIXED_PHONE_E164 key hi na ho,
+# default +923219655330 (Twilio Verified Caller ID). Key ho aur value khali ho to form wala number use hoga.
+if "OTP_FIXED_PHONE_E164" in os.environ:
+    OTP_FIXED_PHONE_E164 = (os.environ.get("OTP_FIXED_PHONE_E164") or "").strip()
+else:
+    OTP_FIXED_PHONE_E164 = "+923219655330"
 
 # --- Email (Brevo SMTP or any provider) — registration email OTP ---
 # Brevo: https://app.brevo.com/settings/keys/smtp — Login = your Brevo account email, Password = xsmtpsib-... key

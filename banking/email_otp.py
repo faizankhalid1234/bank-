@@ -57,7 +57,7 @@ def build_registration_otp_email(otp: str) -> tuple[str, str, str]:
     bank_name = html.escape(getattr(settings, "BANK_NAME_EMAIL", "AlyBank"))
 
     html_body = f"""<!DOCTYPE html>
-<html lang="en">2
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">

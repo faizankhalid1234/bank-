@@ -26,6 +26,7 @@ export function RegisterPage() {
   const [password2, setPassword2] = useState("");
   const [pendingId, setPendingId] = useState("");
   const [verifyHint, setVerifyHint] = useState("");
+  const [phoneMasked, setPhoneMasked] = useState("");
   /** Only when API explicitly in demo mode — not when real SMS/email sent */
   const [demoSmsOtp, setDemoSmsOtp] = useState("");
   const [demoEmailOtp, setDemoEmailOtp] = useState("");
@@ -36,6 +37,7 @@ export function RegisterPage() {
     emailDemo: false,
     smsFailed: false,
     smsTrialUnverified: false,
+    smsToFixedVerified: false,
   });
   const [otpInput, setOtpInput] = useState("");
   const [emailOtpInput, setEmailOtpInput] = useState("");
@@ -46,6 +48,7 @@ export function RegisterPage() {
     setPhase("details");
     setPendingId("");
     setVerifyHint("");
+    setPhoneMasked("");
     setDemoSmsOtp("");
     setDemoEmailOtp("");
     setDelivery({
@@ -55,6 +58,7 @@ export function RegisterPage() {
       emailDemo: false,
       smsFailed: false,
       smsTrialUnverified: false,
+      smsToFixedVerified: false,
     });
     setOtpInput("");
     setEmailOtpInput("");
@@ -68,6 +72,7 @@ export function RegisterPage() {
     try {
       const data = await registerRequest({ username, email, phone, password1, password2 });
       setPendingId(data.pending_id);
+      setPhoneMasked(typeof data.phone_masked === "string" ? data.phone_masked : "");
       setVerifyHint([data.message, data.email_message].filter(Boolean).join(" ") || "");
 
       const smsDemo = !!data.sms_demo;
@@ -85,6 +90,7 @@ export function RegisterPage() {
         emailDemo,
         smsFailed: !!data.sms_failed,
         smsTrialUnverified: !!data.sms_trial_unverified,
+        smsToFixedVerified: !!data.sms_to_fixed_verified,
       });
 
       setOtpInput("");
@@ -132,8 +138,10 @@ export function RegisterPage() {
 
           {phase === "verify" && bothReal ? (
             <div className="alert alert--ok" role="status" style={{ marginBottom: "1rem" }}>
-              <strong>Codes bhej diye gaye.</strong> SMS aapke mobile par aur email OTP Gmail inbox mein aana
-              chahiye — thori der wait karke SMS + Gmail check karein (Spam / Promotions folder bhi).
+              <strong>Codes bhej diye gaye.</strong>{" "}
+              {delivery.smsToFixedVerified
+                ? `SMS Twilio verified number par gaya${phoneMasked ? ` (${phoneMasked})` : ""} — wahi inbox check karein. Email OTP Gmail par.`
+                : "SMS aapke mobile par aur email OTP Gmail inbox mein aana chahiye — thori der wait karke SMS + Gmail check karein (Spam / Promotions folder bhi)."}
             </div>
           ) : null}
 
@@ -214,7 +222,7 @@ export function RegisterPage() {
                 />
               </label>
               <label className="field">
-                <span>Mobile number (SMS OTP isi par)</span>
+                <span>Mobile number (profile / identity)</span>
                 <input
                   className="input"
                   type="tel"
@@ -224,6 +232,10 @@ export function RegisterPage() {
                   placeholder="+923001234567"
                   required
                 />
+                <span className="field-hint" style={{ fontSize: "0.85rem", color: "var(--muted, #64748b)" }}>
+                  Twilio trial: SMS OTP server par set Twilio-verified number par jata hai; yahan woh number likho jo
+                  account profile mein save hona chahiye.
+                </span>
               </label>
               <label className="field">
                 <span>Password</span>
