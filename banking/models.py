@@ -87,7 +87,7 @@ def iban_for_account_number(account_number: str) -> str:
 
 
 class PendingSignup(models.Model):
-    """Holds registration data until OTP is verified (SMS when Twilio is configured)."""
+    """Holds registration data until SMS + email OTPs are verified."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=150)
@@ -95,6 +95,7 @@ class PendingSignup(models.Model):
     phone_number = models.CharField(max_length=20, db_index=True, default="", blank=True)
     password_hash = models.CharField(max_length=128)
     otp_hash = models.CharField(max_length=64)
+    email_otp_hash = models.CharField(max_length=64, default="", blank=True)
     expires_at = models.DateTimeField(db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

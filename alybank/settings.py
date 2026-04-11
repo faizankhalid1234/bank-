@@ -104,10 +104,14 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
@@ -127,3 +131,36 @@ TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
 # Optional: apna mobile yahan ek dafa likho (E.164, e.g. +923001234567). Registration form ka phone ignore ho jata hai —
 # OTP seedha isi number par jayega (Twilio trial par jo number verify kiya ho wahi rakho).
 OTP_FIXED_PHONE_E164 = os.environ.get("OTP_FIXED_PHONE_E164", "").strip()
+
+# --- Email (Brevo SMTP or any provider) — registration email OTP ---
+# Brevo: https://app.brevo.com/settings/keys/smtp — Login = your Brevo account email, Password = xsmtpsib-... key
+BREVO_SMTP_LOGIN = os.environ.get("BREVO_SMTP_LOGIN", "").strip()
+BREVO_SMTP_KEY = os.environ.get("BREVO_SMTP_KEY", "").strip()
+# Real inbox address verified in Brevo → Senders (Gmail etc.). Required when SMTP login is *@smtp-brevo.com.
+BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "").strip()
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp-relay.brevo.com").strip()
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1").lower() not in ("0", "false", "no")
+EMAIL_HOST_USER = (os.environ.get("EMAIL_HOST_USER", "").strip() or BREVO_SMTP_LOGIN)
+EMAIL_HOST_PASSWORD = (os.environ.get("EMAIL_HOST_PASSWORD", "").strip() or BREVO_SMTP_KEY)
+
+_default_from_env = os.environ.get("DEFAULT_FROM_EMAIL", "").strip()
+if _default_from_env:
+    DEFAULT_FROM_EMAIL = _default_from_env
+elif BREVO_SENDER_EMAIL:
+    DEFAULT_FROM_EMAIL = f"AlyBank <{BREVO_SENDER_EMAIL}>"
+elif EMAIL_HOST_USER and "@smtp-brevo.com" not in EMAIL_HOST_USER.lower():
+    DEFAULT_FROM_EMAIL = f"AlyBank <{EMAIL_HOST_USER}>"
+else:
+    # SMTP user is like xxxx@smtp-brevo.com — Gmail needs a normal verified From; set BREVO_SENDER_EMAIL.
+    DEFAULT_FROM_EMAIL = ""
+
+BANK_NAME_EMAIL = os.environ.get("BANK_NAME_EMAIL", "AlyBank").strip() or "AlyBank"
+
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = os.environ.get(
+        "EMAIL_BACKEND",
+        "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",
+    )

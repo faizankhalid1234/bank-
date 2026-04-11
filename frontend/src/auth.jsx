@@ -46,11 +46,12 @@ export function AuthProvider({ children }) {
     return api.post("/auth/register/request/", payload);
   }, []);
 
-  const registerConfirm = useCallback(async ({ pendingId, otp }) => {
+  const registerConfirm = useCallback(async ({ pendingId, otp, emailOtp }) => {
     await ensureCsrf();
     const data = await api.post("/auth/register/confirm/", {
       pending_id: pendingId,
       otp,
+      email_otp: emailOtp,
     });
     if (data.token) setAuthToken(data.token);
     setMe({ user: data.user, account: data.account });

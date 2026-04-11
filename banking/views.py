@@ -1,7 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -22,19 +21,12 @@ def register_view(request):
     if request.user.is_authenticated:
         return redirect("banking:dashboard")
     if request.method == "POST":
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            user: User = form.save()
-            try:
-                ensure_bank_account(user)
-            except IntegrityError:
-                messages.error(request, "Could not create account. Try again.")
-                return render(request, "banking/register.html", {"form": form})
-            login(request, user)
-            messages.success(request, "Welcome to AlyBank. Your account is ready.")
-            return redirect("banking:dashboard")
-    else:
-        form = RegisterForm()
+        messages.error(
+            request,
+            "Yahan se direct account nahi banta. App / signup par jao — SMS aur email dono OTP ke baghair account create nahi hota.",
+        )
+        return render(request, "banking/register.html", {"form": RegisterForm()})
+    form = RegisterForm()
     return render(request, "banking/register.html", {"form": form})
 
 

@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django import forms
+from django.contrib.auth import authenticate
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -40,25 +41,50 @@ class AlyAuthForm(AuthenticationForm):
     def clean(self):
         username_raw = (self.cleaned_data.get("username") or "").strip()
         email_raw = (self.cleaned_data.get("email") or "").strip()
+        password = self.cleaned_data.get("password")
 
-        if username_raw:
-            self.cleaned_data["username"] = username_raw
-        elif email_raw:
-            user_lookup = User.objects.filter(email__iexact=email_raw).first()
-            if user_lookup is None:
+        if not email_raw and not username_raw:
+            raise forms.ValidationError("Enter your username or email address.")
+
+        if password is None or password == "":
+            raise forms.ValidationError({"password": "Enter your password."})
+
+        # Prefer email, then username (case-insensitive). Avoids wrong-password __all__ when only casing differed.
+        user_obj = None
+        if email_raw:
+            user_obj = User.objects.filter(email__iexact=email_raw).first()
+        if user_obj is None and username_raw:
+            user_obj = User.objects.filter(username__iexact=username_raw).first()
+
+        if user_obj is None:
+            if email_raw:
                 raise forms.ValidationError(
                     {"email": "No account found with that email address."}
                 )
-            self.cleaned_data["username"] = user_lookup.username
-        else:
-            raise forms.ValidationError("Enter your username or email address.")
+            raise forms.ValidationError(
+                {"username": "No account found with that username."}
+            )
 
-        return super().clean()
+        canonical = user_obj.get_username()
+        self.cleaned_data["username"] = canonical
+
+        user = authenticate(
+            self.request,
+            username=canonical,
+            password=password,
+        )
+        if user is None:
+            if user_obj.check_password(password) and not user_obj.is_active:
+                raise forms.ValidationError("This account is disabled.")
+            raise forms.ValidationError({"password": "Incorrect password."})
+        self.confirm_login_allowed(user)
+        self.user_cache = user
+        return self.cleaned_data
 
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(
-        required=False,
+        required=True,
         label="Email",
         widget=forms.EmailInput(
             attrs={"class": "input", "placeholder": " ", "autocomplete": "email"}
@@ -90,12 +116,7 @@ class RegisterForm(UserCreationForm):
         self.fields["email"].widget.attrs.setdefault("class", "input")
 
     def clean_email(self):
-        email = (self.cleaned_data.get("email") or "").strip()
-        if not email:
-            return ""
-        if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("An account with that email already exists.")
-        return email
+        return (self.cleaned_data.get("email") or "").strip()
 
     def clean_phone(self):
         raw = self.cleaned_data.get("phone") or ""
