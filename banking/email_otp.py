@@ -10,7 +10,6 @@ from django.core.mail import EmailMultiAlternatives
 
 logger = logging.getLogger(__name__)
 
-
 def _smtp_credentials_set() -> bool:
     u = (getattr(settings, "EMAIL_HOST_USER", None) or "").strip()
     p = (getattr(settings, "EMAIL_HOST_PASSWORD", None) or "").strip()
@@ -58,7 +57,7 @@ def build_registration_otp_email(otp: str) -> tuple[str, str, str]:
     bank_name = html.escape(getattr(settings, "BANK_NAME_EMAIL", "AlyBank"))
 
     html_body = f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="en">2
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">

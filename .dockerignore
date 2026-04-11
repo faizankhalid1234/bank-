@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.mypy_cache
+.cursor
+*.md
+frontend/node_modules
+static/spa
+db.sqlite3
+*.sqlite3

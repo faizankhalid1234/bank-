@@ -10,11 +10,21 @@ try:
 except ImportError:
     pass
 
-SECRET_KEY = "alybank-dev-change-in-production-use-env"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "alybank-dev-change-in-production-use-env")
 
-DEBUG = True
+# Production: set DEBUG=0 or DEBUG=false in environment.
+_debug_raw = (os.environ.get("DEBUG", "") or "").strip().lower()
+if _debug_raw in ("0", "false", "no", "off"):
+    DEBUG = False
+elif _debug_raw in ("1", "true", "yes", "on"):
+    DEBUG = True
+else:
+    DEBUG = True  # default: local dev
 
-ALLOWED_HOSTS = ["*"]
+_allowed = (os.environ.get("ALLOWED_HOSTS", "") or "").strip()
+ALLOWED_HOSTS = (
+    [h.strip() for h in _allowed.split(",") if h.strip()] if _allowed else ["*"]
+)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -31,6 +41,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -60,12 +71,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "alybank.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if (os.environ.get("DATABASE_URL") or "").strip():
+    import dj_database_url
+
+    DATABASES = {
+        "default": dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=os.environ.get("DATABASE_SSL_REQUIRE", "").lower()
+            in ("1", "true", "yes", "require"),
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -81,6 +103,15 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -115,6 +146,18 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+_extra_cors = (os.environ.get("DEPLOYMENT_CORS_ORIGINS", "") or "").strip()
+if _extra_cors:
+    for origin in _extra_cors.split(","):
+        o = origin.strip()
+        if o and o not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(o)
+_extra_csrf = (os.environ.get("DEPLOYMENT_CSRF_TRUSTED_ORIGINS", "") or "").strip()
+if _extra_csrf:
+    for origin in _extra_csrf.split(","):
+        o = origin.strip()
+        if o and o not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(o)
 
 LOGIN_REDIRECT_URL = "banking:dashboard"
 LOGOUT_REDIRECT_URL = "banking:login"
