@@ -3,6 +3,7 @@
 import base64
 import json
 import logging
+import re
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -36,6 +37,10 @@ def _twilio_basic_auth_header() -> str:
     return f"Basic {base64.b64encode(raw.encode()).decode()}"
 
 
+# Twilio REST: common codes when trial / recipient not allowed (see Twilio docs).
+_TRIAL_OR_RECIPIENT_CODES = frozenset({21608, 21211, 21610, 21614, 21408})
+
+
 def send_registration_otp(phone_e164: str, otp: str) -> tuple[bool, str, str | None]:
     """
     Try to SMS the OTP. Returns (success, user_message_key, otp_for_json_or_none).
@@ -45,6 +50,9 @@ def send_registration_otp(phone_e164: str, otp: str) -> tuple[bool, str, str | N
 
     When Twilio is not configured and DEBUG is True, otp_for_json_or_none is the OTP
     so the SPA can show it (demo). When DEBUG is False, OTP is never returned.
+
+    When Twilio is configured but the API or message status fails, DEBUG=True still
+    returns sms_demo with the OTP so signup is not blocked (trial limits, outages).
     """
     from_num = getattr(settings, "TWILIO_FROM_NUMBER", "") or ""
     body = f"AlyBank verification code: {otp}. Valid 10 minutes. Do not share."
@@ -55,12 +63,12 @@ def send_registration_otp(phone_e164: str, otp: str) -> tuple[bool, str, str | N
             logger.info("SMS OTP sent to %s", phone_e164)
             return True, "sms_sent", None
         logger.warning("Twilio SMS failed: %s", err)
-        # In local DEBUG mode, any Twilio failure falls back to in-app OTP
-        # so registration can continue during trial limits/outages.
+        # DEBUG: never hard-fail signup — show OTP in app if SMS cannot be delivered.
         if getattr(settings, "DEBUG", False):
             logger.info("Twilio failure fallback to demo OTP for %s", phone_e164)
             return True, "sms_demo", otp
-        if _twilio_error_code(err) == 21608:
+        code = _twilio_error_code(err)
+        if code in _TRIAL_OR_RECIPIENT_CODES:
             return False, "sms_trial_unverified", None
         return False, "sms_failed", None
 
@@ -91,9 +99,21 @@ def _twilio_send(from_number: str, to_number: str, body: str) -> tuple[bool, str
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
     try:
         with urlopen(req, timeout=30) as resp:
-            if resp.status in (200, 201):
+            raw = resp.read().decode(errors="replace")
+            if resp.status not in (200, 201):
+                return False, raw
+            # 201 can still mean Twilio accepted then failed (error_code / status).
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
                 return True, ""
-            return False, resp.read().decode(errors="replace")
+            st = (payload.get("status") or "").lower()
+            if st in ("failed", "undelivered", "canceled"):
+                return False, raw
+            err_c = payload.get("error_code")
+            if err_c is not None and err_c != 0 and err_c != "":
+                return False, raw
+            return True, ""
     except HTTPError as e:
         return False, e.read().decode(errors="replace")
     except URLError as e:
@@ -101,9 +121,20 @@ def _twilio_send(from_number: str, to_number: str, body: str) -> tuple[bool, str
 
 
 def _twilio_error_code(err_text: str) -> int | None:
+    text = err_text or ""
     try:
-        data = json.loads(err_text or "")
+        data = json.loads(text)
     except Exception:
-        return None
+        m = re.search(r'"code"\s*:\s*(\d+)', text)
+        return int(m.group(1)) if m else None
     code = data.get("code")
-    return int(code) if isinstance(code, int) else None
+    if isinstance(code, int):
+        return code
+    if isinstance(code, str) and code.isdigit():
+        return int(code)
+    ec = data.get("error_code")
+    if isinstance(ec, int):
+        return ec
+    if isinstance(ec, str) and ec.isdigit():
+        return int(ec)
+    return None
