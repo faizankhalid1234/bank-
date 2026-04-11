@@ -21,10 +21,32 @@ elif _debug_raw in ("1", "true", "yes", "on"):
 else:
     DEBUG = True  # default: local dev
 
+# Production app URL (Railway). Override with PUBLIC_APP_URL=https://your-host.up.railway.app
+_railway_public_domain = (os.environ.get("RAILWAY_PUBLIC_DOMAIN") or "").strip()
+_default_railway_host = "bank-production-f72a.up.railway.app"
+_public_app_url = (os.environ.get("PUBLIC_APP_URL") or "").strip().rstrip("/")
+if not _public_app_url:
+    _host_for_origin = _railway_public_domain or _default_railway_host
+    _public_app_url = f"https://{_host_for_origin}"
+
 _allowed = (os.environ.get("ALLOWED_HOSTS", "") or "").strip()
-ALLOWED_HOSTS = (
-    [h.strip() for h in _allowed.split(",") if h.strip()] if _allowed else ["*"]
-)
+if _allowed:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()]
+elif DEBUG:
+    ALLOWED_HOSTS = ["*"]
+else:
+    _hosts: list[str] = []
+    for h in (_railway_public_domain, _default_railway_host):
+        if h and h not in _hosts:
+            _hosts.append(h)
+    ALLOWED_HOSTS = _hosts
+
+# Behind Railway / reverse proxy: HTTPS at edge, HTTP internally.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -146,6 +168,11 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+# Railway production (https://bank-production-f72a.up.railway.app/) — same SPA + API origin
+if _public_app_url.startswith("http") and _public_app_url not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(_public_app_url)
+if _public_app_url.startswith("http") and _public_app_url not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(_public_app_url)
 _extra_cors = (os.environ.get("DEPLOYMENT_CORS_ORIGINS", "") or "").strip()
 if _extra_cors:
     for origin in _extra_cors.split(","):
