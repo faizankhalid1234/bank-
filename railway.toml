@@ -10,3 +10,5 @@ dockerfilePath = "Dockerfile"
 # One argv block only (Railway: array max 1 element — full shell command as single string).
 preDeployCommand = ["python manage.py migrate --noinput"]
 healthcheckPath = "/healthz"
+# Extra time if the container is slow to accept connections on first boot.
+healthcheckTimeout = 120
