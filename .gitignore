@@ -8,4 +8,5 @@ db.sqlite3
 .idea/
 .vscode/
 frontend/node_modules/
-static/spa/assets/
+# Vite build output (Dockerfile runs npm run build — no need to commit)
+static/spa/

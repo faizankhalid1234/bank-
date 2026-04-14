@@ -15,6 +15,20 @@ export function Layout() {
     localStorage.setItem("alybank-theme", theme);
   }, [theme]);
 
+  // PWA / iOS: correct icon path for dev (/) and production (/static/spa/)
+  useEffect(() => {
+    const base = import.meta.env.BASE_URL || "/";
+    const href = `${base.replace(/\/?$/, "/")}pwa-192.png`;
+    let link = document.querySelector('link[rel="apple-touch-icon"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "apple-touch-icon";
+      link.sizes = "192x192";
+      document.head.appendChild(link);
+    }
+    link.href = href;
+  }, []);
+
   const location = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
