@@ -3,7 +3,6 @@ import secrets
 from datetime import timedelta
 from decimal import Decimal
 
-from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
@@ -153,12 +152,8 @@ class RegisterRequestView(APIView):
 
     def post(self, request):
         PendingSignup.objects.filter(expires_at__lt=timezone.now()).delete()
-        fixed = (getattr(settings, "OTP_FIXED_PHONE_E164", None) or "").strip()
         payload = request.data
-        if fixed:
-            payload = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
-            payload["phone"] = fixed
-        np = normalize_phone(fixed if fixed else (request.data.get("phone") or ""))
+        np = normalize_phone(request.data.get("phone") or "")
         if np:
             PendingSignup.objects.filter(phone_number=np).delete()
         form = RegisterForm(payload)
@@ -207,7 +202,6 @@ class RegisterRequestView(APIView):
 
         _, sms_key, otp_for_client = send_registration_otp(phone, sms_otp)
         masked = mask_phone(phone)
-        fixed_sms_to = (getattr(settings, "OTP_FIXED_PHONE_E164", None) or "").strip()
         pending = PendingSignup.objects.create(
             username=username,
             email=email,
@@ -221,7 +215,7 @@ class RegisterRequestView(APIView):
             "pending_id": str(pending.id),
             "expires_in": 600,
             "phone_masked": masked,
-            "sms_to_fixed_verified": bool(fixed_sms_to),
+            "sms_to_fixed_verified": False,
             "sms_sent": sms_key == "sms_sent",
             "sms_demo": sms_key == "sms_demo",
             "sms_dev_console": sms_key == "sms_dev_console",
