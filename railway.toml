@@ -1,0 +1,5 @@
+# Use the repo Dockerfile so `npm run build` runs and `static/spa/` is populated
+# before `collectstatic` (avoids empty/broken SPA on Nixpacks-only Python builds).
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"

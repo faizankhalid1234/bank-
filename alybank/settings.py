@@ -39,6 +39,12 @@ else:
     for h in (_railway_public_domain, _default_railway_host):
         if h and h not in _hosts:
             _hosts.append(h)
+    # Railway: new service URLs are *.up.railway.app — avoid DisallowedHost if
+    # RAILWAY_PUBLIC_DOMAIN is missing or a custom domain is added later via env.
+    if (os.environ.get("RAILWAY_ENVIRONMENT") or "").strip():
+        for suffix in (".up.railway.app", ".railway.app"):
+            if suffix not in _hosts:
+                _hosts.append(suffix)
     ALLOWED_HOSTS = _hosts
 
 # Behind Railway / reverse proxy: HTTPS at edge, HTTP internally.

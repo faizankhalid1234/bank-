@@ -7,6 +7,10 @@ from django.http import FileResponse, HttpResponse
 from django.urls import include, path, re_path
 
 
+def healthz(_request):
+    return HttpResponse("ok", content_type="text/plain; charset=utf-8")
+
+
 def spa_index(request):
     """Serve the React SPA (built to static/spa/)."""
     p = Path(settings.BASE_DIR) / "static" / "spa" / "index.html"
@@ -20,6 +24,7 @@ def spa_index(request):
 
 
 urlpatterns = [
+    path("healthz", healthz),
     path("admin/", admin.site.urls),
     path("api/", include("banking.api_urls")),
 ]
