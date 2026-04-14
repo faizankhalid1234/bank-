@@ -15,18 +15,29 @@ export function Layout() {
     localStorage.setItem("alybank-theme", theme);
   }, [theme]);
 
-  // PWA / iOS: correct icon path for dev (/) and production (/static/spa/)
+  // PWA / iOS / tab: install + home screen icon (public/pwa-*.png)
   useEffect(() => {
     const base = import.meta.env.BASE_URL || "/";
     const href = `${base.replace(/\/?$/, "/")}pwa-192.png`;
-    let link = document.querySelector('link[rel="apple-touch-icon"]');
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "apple-touch-icon";
-      link.sizes = "192x192";
-      document.head.appendChild(link);
+
+    let apple = document.querySelector('link[rel="apple-touch-icon"]');
+    if (!apple) {
+      apple = document.createElement("link");
+      apple.rel = "apple-touch-icon";
+      apple.sizes = "192x192";
+      document.head.appendChild(apple);
     }
-    link.href = href;
+    apple.href = href;
+
+    let fav = document.querySelector('link[rel="icon"][data-alybank-icon="1"]');
+    if (!fav) {
+      fav = document.createElement("link");
+      fav.rel = "icon";
+      fav.type = "image/png";
+      fav.setAttribute("data-alybank-icon", "1");
+      document.head.appendChild(fav);
+    }
+    fav.href = href;
   }, []);
 
   const location = useLocation();
