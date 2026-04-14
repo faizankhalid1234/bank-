@@ -44,6 +44,8 @@ def _twilio_basic_auth_header() -> str:
 _TRIAL_OR_RECIPIENT_CODES = frozenset(
     {21211, 21408, 21608, 21610, 21614, 21659, 60203, 60212}
 )
+# Daily / account throughput limit (see Twilio error 63038).
+_TWILIO_QUOTA_CODES = frozenset({63038})
 
 
 def send_registration_otp(
@@ -53,7 +55,7 @@ def send_registration_otp(
     Try to SMS the OTP. Returns (success, user_message_key, otp_for_json_or_none, twilio_error_code).
 
     user_message_key:
-      'sms_sent' | 'sms_failed' | 'sms_trial_unverified' | 'sms_demo' | 'sms_dev_console'
+      'sms_sent' | 'sms_failed' | 'sms_quota_exceeded' | 'sms_trial_unverified' | 'sms_demo' | 'sms_dev_console'
 
     When Twilio is not configured and DEBUG is True, otp_for_json_or_none is the OTP
     so the SPA can show it (demo). When DEBUG is False, OTP is never returned.
@@ -77,6 +79,8 @@ def send_registration_otp(
         if getattr(settings, "DEBUG", False) and _fallback:
             logger.info("Twilio failure + SMS_OTP_FALLBACK_ON_TWILIO_FAIL: demo OTP for %s", phone_e164)
             return True, "sms_demo", otp, code
+        if code in _TWILIO_QUOTA_CODES:
+            return False, "sms_quota_exceeded", None, code
         if code in _TRIAL_OR_RECIPIENT_CODES:
             return False, "sms_trial_unverified", None, code
         return False, "sms_failed", None, code

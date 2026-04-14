@@ -36,6 +36,7 @@ export function RegisterPage() {
     smsDemo: false,
     emailDemo: false,
     smsFailed: false,
+    smsQuotaExceeded: false,
     smsTrialUnverified: false,
     smsToFixedVerified: false,
   });
@@ -57,6 +58,7 @@ export function RegisterPage() {
       smsDemo: false,
       emailDemo: false,
       smsFailed: false,
+      smsQuotaExceeded: false,
       smsTrialUnverified: false,
       smsToFixedVerified: false,
     });
@@ -89,6 +91,7 @@ export function RegisterPage() {
         smsDemo,
         emailDemo,
         smsFailed: !!data.sms_failed,
+        smsQuotaExceeded: !!data.sms_quota_exceeded,
         smsTrialUnverified: !!data.sms_trial_unverified,
         smsToFixedVerified: !!data.sms_to_fixed_verified,
       });
@@ -133,7 +136,9 @@ export function RegisterPage() {
                 ? "Dono codes real tarah se bheje gaye: mobile SMS + Gmail inbox (Spam/Promotions bhi dekhein)."
                 : showDemoPanel
                   ? "Neeche demo codes sirf tab dikhte hain jab server SMS/email demo mode mein ho — production mein yeh boxes nahi aate."
-                  : "Jo code SMS par aaya ho aur jo Gmail par, dono yahan likhein."}
+                  : delivery.smsQuotaExceeded && delivery.emailSent
+                    ? "Email OTP inbox mein hai. SMS Twilio account ki daily limit (63038) ki wajah se nahi gaya — neeche detail padhein; SMS ke liye kal retry ya Twilio par limit barhao."
+                    : "Jo code SMS par aaya ho aur jo Gmail par, dono yahan likhein."}
           </p>
 
           {phase === "verify" && bothReal ? (

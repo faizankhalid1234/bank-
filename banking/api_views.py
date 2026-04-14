@@ -52,6 +52,11 @@ def _registration_otp_message(sms_key: str, masked: str) -> str:
             "Twilio ne SMS reject ki (trial / verified number / permission). "
             "Console → Verified Caller IDs par yeh number verify karein, ya paid account, ya TWILIO_MESSAGING_SERVICE_SID use karein."
         )
+    if sms_key == "sms_quota_exceeded":
+        return (
+            "Twilio daily SMS limit khatam (error 63038). Kal dubara try karein ya Twilio Console → Billing/Support se limit barhao. "
+            "OTP user ke diye hue mobile number par hi jati hai — number galat nahi; account quota block kar raha hai."
+        )
     if sms_key == "sms_failed":
         return (
             "SMS Twilio se nahi gayi (keys, From / Messaging Service, ya carrier). "
@@ -225,6 +230,7 @@ class RegisterRequestView(APIView):
             "sms_demo": sms_key == "sms_demo",
             "sms_dev_console": sms_key == "sms_dev_console",
             "sms_failed": sms_key == "sms_failed",
+            "sms_quota_exceeded": sms_key == "sms_quota_exceeded",
             "sms_trial_unverified": sms_key == "sms_trial_unverified",
             "message": _registration_otp_message(sms_key, masked),
             "email_sent": email_key == "email_sent",
