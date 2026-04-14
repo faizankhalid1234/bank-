@@ -3,3 +3,9 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
+
+# Run DB migrations once per deploy (before new containers take traffic).
+# See: https://docs.railway.com/deployments/pre-deploy-command
+[deploy]
+preDeployCommand = ["python", "manage.py", "migrate", "--noinput"]
+healthcheckPath = "/healthz"
