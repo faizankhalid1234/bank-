@@ -1,0 +1,10 @@
+﻿# Railway deploy config (single source of truth)
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# IMPORTANT: run through shell so ${PORT} expands correctly.
+startCommand = "sh -c 'python manage.py migrate --noinput && exec gunicorn alybank.wsgi:application --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 4 --timeout 120'"
+healthcheckPath = "/healthz"
+healthcheckTimeout = 120
