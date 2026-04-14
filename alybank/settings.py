@@ -208,6 +208,12 @@ TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
 TWILIO_API_KEY_SID = os.environ.get("TWILIO_API_KEY_SID", "").strip()
 TWILIO_API_KEY_SECRET = os.environ.get("TWILIO_API_KEY_SECRET", "").strip()
 TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
+# Optional: use a Messaging Service instead of From (set either this or TWILIO_FROM_NUMBER).
+TWILIO_MESSAGING_SERVICE_SID = os.environ.get("TWILIO_MESSAGING_SERVICE_SID", "").strip()
+# Local only: if 1 and DEBUG, Twilio SMS fail hone par bhi JSON mein OTP (trial debug).
+SMS_OTP_FALLBACK_ON_TWILIO_FAIL = (
+    os.environ.get("SMS_OTP_FALLBACK_ON_TWILIO_FAIL", "").strip().lower() in ("1", "true", "yes")
+)
 
 # Optional override (usually keep empty): if set, OTP is always sent to this E.164 number.
 # Leave empty to send OTP to the user's submitted phone number.

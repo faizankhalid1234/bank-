@@ -14,10 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 def _twilio_configured() -> bool:
-    """True if we can call Twilio Messages API (Account SID + From + auth)."""
+    """True if we can call Twilio Messages API (Account SID + auth + From or Messaging Service)."""
     acct = (getattr(settings, "TWILIO_ACCOUNT_SID", "") or "").strip()
+    if not acct:
+        return False
     frm = (getattr(settings, "TWILIO_FROM_NUMBER", "") or "").strip()
-    if not acct or not frm:
+    msid = (getattr(settings, "TWILIO_MESSAGING_SERVICE_SID", "") or "").strip()
+    if not frm and not msid:
         return False
     key_sid = (getattr(settings, "TWILIO_API_KEY_SID", "") or "").strip()
     key_secret = (getattr(settings, "TWILIO_API_KEY_SECRET", "") or "").strip()
@@ -37,13 +40,17 @@ def _twilio_basic_auth_header() -> str:
     return f"Basic {base64.b64encode(raw.encode()).decode()}"
 
 
-# Twilio REST: common codes when trial / recipient not allowed (see Twilio docs).
-_TRIAL_OR_RECIPIENT_CODES = frozenset({21608, 21211, 21610, 21614, 21408})
+# Twilio REST: common codes when trial / recipient / permission (see Twilio error dictionary).
+_TRIAL_OR_RECIPIENT_CODES = frozenset(
+    {21211, 21408, 21608, 21610, 21614, 21659, 60203, 60212}
+)
 
 
-def send_registration_otp(phone_e164: str, otp: str) -> tuple[bool, str, str | None]:
+def send_registration_otp(
+    phone_e164: str, otp: str
+) -> tuple[bool, str, str | None, int | None]:
     """
-    Try to SMS the OTP. Returns (success, user_message_key, otp_for_json_or_none).
+    Try to SMS the OTP. Returns (success, user_message_key, otp_for_json_or_none, twilio_error_code).
 
     user_message_key:
       'sms_sent' | 'sms_failed' | 'sms_trial_unverified' | 'sms_demo' | 'sms_dev_console'
@@ -51,49 +58,53 @@ def send_registration_otp(phone_e164: str, otp: str) -> tuple[bool, str, str | N
     When Twilio is not configured and DEBUG is True, otp_for_json_or_none is the OTP
     so the SPA can show it (demo). When DEBUG is False, OTP is never returned.
 
-    When Twilio is configured but the API or message status fails, DEBUG=True still
-    returns sms_demo with the OTP so signup is not blocked (trial limits, outages).
+    When Twilio is configured but send fails, we return sms_trial_unverified or sms_failed
+    (never pretend sms_sent). Optional: SMS_OTP_FALLBACK_ON_TWILIO_FAIL=1 with DEBUG returns
+    sms_demo + OTP for local trial debugging only.
     """
-    from_num = getattr(settings, "TWILIO_FROM_NUMBER", "") or ""
+    from_num = (getattr(settings, "TWILIO_FROM_NUMBER", "") or "").strip()
+    messaging_sid = (getattr(settings, "TWILIO_MESSAGING_SERVICE_SID", "") or "").strip()
     body = f"AlyBank verification code: {otp}. Valid 10 minutes. Do not share."
 
     if _twilio_configured():
-        ok, err = _twilio_send(from_num, phone_e164, body)
+        ok, err = _twilio_send(from_num, messaging_sid, phone_e164, body)
         if ok:
             logger.info("SMS OTP sent to %s", phone_e164)
-            return True, "sms_sent", None
+            return True, "sms_sent", None, None
         logger.warning("Twilio SMS failed: %s", err)
-        # DEBUG: never hard-fail signup — show OTP in app if SMS cannot be delivered.
-        if getattr(settings, "DEBUG", False):
-            logger.info("Twilio failure fallback to demo OTP for %s", phone_e164)
-            return True, "sms_demo", otp
         code = _twilio_error_code(err)
+        _fallback = getattr(settings, "SMS_OTP_FALLBACK_ON_TWILIO_FAIL", False)
+        if getattr(settings, "DEBUG", False) and _fallback:
+            logger.info("Twilio failure + SMS_OTP_FALLBACK_ON_TWILIO_FAIL: demo OTP for %s", phone_e164)
+            return True, "sms_demo", otp, code
         if code in _TRIAL_OR_RECIPIENT_CODES:
-            return False, "sms_trial_unverified", None
-        return False, "sms_failed", None
+            return False, "sms_trial_unverified", None, code
+        return False, "sms_failed", None, code
 
     if getattr(settings, "DEBUG", False):
         logger.info("Demo mode (no Twilio): OTP for %s shown in app only", phone_e164)
-        return True, "sms_demo", otp
+        return True, "sms_demo", otp, None
 
     logger.warning(
         "SMS not configured — OTP for %s is: %s (server log only; set TWILIO_* or run with DEBUG)",
         phone_e164,
         otp,
     )
-    return True, "sms_dev_console", None
+    return True, "sms_dev_console", None, None
 
 
-def _twilio_send(from_number: str, to_number: str, body: str) -> tuple[bool, str]:
+def _twilio_send(
+    from_number: str, messaging_service_sid: str, to_number: str, body: str
+) -> tuple[bool, str]:
     acct_sid = settings.TWILIO_ACCOUNT_SID
     url = f"https://api.twilio.com/2010-04-01/Accounts/{acct_sid}/Messages.json"
-    data = urlencode(
-        {
-            "To": to_number,
-            "From": from_number,
-            "Body": body,
-        }
-    ).encode()
+    fields: dict[str, str] = {"To": to_number, "Body": body}
+    msid = (messaging_service_sid or "").strip()
+    if msid:
+        fields["MessagingServiceSid"] = msid
+    else:
+        fields["From"] = from_number
+    data = urlencode(fields).encode()
     req = Request(url, data=data, method="POST")
     req.add_header("Authorization", _twilio_basic_auth_header())
     req.add_header("Content-Type", "application/x-www-form-urlencoded")

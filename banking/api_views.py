@@ -40,8 +40,8 @@ def _registration_otp_message(sms_key: str, masked: str) -> str:
         return f"Hum ne {masked} par 6 digit code bheja hai. Neeche likh dein."
     if sms_key == "sms_demo":
         return (
-            "Demo mode/fallback — neeche wala 6 digit code yahin se copy karke paste karein. "
-            "Twilio trial par unverified numbers ko SMS nahi jati; verify number karo ya account upgrade karo."
+            "Local demo: Twilio SMS .env mein set nahi / SMS_OTP_FALLBACK_ON_TWILIO_FAIL=1 debug. "
+            "Neeche wala code copy karke paste karein. Production SMS ke liye Twilio keys + paid/trial verified number zaroori."
         )
     if sms_key == "sms_dev_console":
         return (
@@ -49,8 +49,13 @@ def _registration_otp_message(sms_key: str, masked: str) -> str:
         )
     if sms_key == "sms_trial_unverified":
         return (
-            "Twilio trial restriction: jis number par OTP bhejni hai woh Twilio par verified nahi. "
-            "Twilio Console mein recipient verify karein, ya account upgrade karein."
+            "Twilio ne SMS reject ki (trial / verified number / permission). "
+            "Console → Verified Caller IDs par yeh number verify karein, ya paid account, ya TWILIO_MESSAGING_SERVICE_SID use karein."
+        )
+    if sms_key == "sms_failed":
+        return (
+            "SMS Twilio se nahi gayi (keys, From / Messaging Service, ya carrier). "
+            "Server logs / sms_twilio_code dekhein, Twilio Debugger mein error match karein."
         )
     return "SMS nahi ja saki. Thori der baad dubara try karein ya Twilio keys check karein."
 
@@ -200,7 +205,7 @@ class RegisterRequestView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        _, sms_key, otp_for_client = send_registration_otp(phone, sms_otp)
+        _, sms_key, otp_for_client, sms_twilio_code = send_registration_otp(phone, sms_otp)
         masked = mask_phone(phone)
         pending = PendingSignup.objects.create(
             username=username,
@@ -226,6 +231,8 @@ class RegisterRequestView(APIView):
             "email_demo": email_key == "email_demo",
             "email_message": _registration_email_otp_message(email_key, email),
         }
+        if sms_twilio_code is not None:
+            payload["sms_twilio_code"] = sms_twilio_code
         if otp_for_client is not None:
             payload["otp"] = otp_for_client
         if email_otp_for_client is not None:
