@@ -176,7 +176,8 @@ export function RegisterPage() {
                     ))}
                   </div>
                   <p className="otp-strip-note">
-                    Production mein Twilio keys + account limits theek hon to SMS user ke diye hue number par jayega.
+                    Production mein Twilio keys + account limits theek hon to SMS user ke diye hue
+                    number par jayega.
                   </p>
                 </div>
               ) : null}
@@ -196,7 +197,8 @@ export function RegisterPage() {
                     ))}
                   </div>
                   <p className="otp-strip-note">
-                    Asli inbox ke liye .env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY + Brevo par verified sender (From).
+                    Asli inbox ke liye .env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY + Brevo par
+                    verified sender (From).
                   </p>
                 </div>
               ) : null}
@@ -243,8 +245,12 @@ export function RegisterPage() {
                   placeholder="+923001234567"
                   required
                 />
-                <span className="field-hint" style={{ fontSize: "0.85rem", color: "var(--muted, #64748b)" }}>
-                  Jo number yahan likho ge, Twilio SMS OTP usi par bhejega (Twilio account limits apply).
+                <span
+                  className="field-hint"
+                  style={{ fontSize: "0.85rem", color: "var(--muted, #64748b)" }}
+                >
+                  Jo number yahan likho ge, Twilio SMS OTP usi par bhejega (Twilio account limits
+                  apply).
                 </span>
               </label>
               <label className="field">
@@ -305,9 +311,7 @@ export function RegisterPage() {
                   maxLength={8}
                   placeholder="000000"
                   value={emailOtpInput}
-                  onChange={(e) =>
-                    setEmailOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))
-                  }
+                  onChange={(e) => setEmailOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   required
                 />
               </label>

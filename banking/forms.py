@@ -49,7 +49,13 @@ class AlyAuthForm(AuthenticationForm):
     password = forms.CharField(
         label="Password",
         strip=False,
-        widget=forms.PasswordInput(attrs={"class": "input", "autocomplete": "current-password", "placeholder": " "}),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "input",
+                "autocomplete": "current-password",
+                "placeholder": " ",
+            }
+        ),
     )
 
     def clean(self):
@@ -77,9 +83,13 @@ class AlyAuthForm(AuthenticationForm):
         # Prefer username, then email (case-insensitive). Email-first broke logins when the browser
         # autofilled a different address but the user typed the correct username + password.
         user_by_username = (
-            User.objects.filter(username__iexact=username_raw).first() if username_raw else None
+            User.objects.filter(username__iexact=username_raw).first()
+            if username_raw
+            else None
         )
-        user_by_email = User.objects.filter(email__iexact=email_raw).first() if email_raw else None
+        user_by_email = (
+            User.objects.filter(email__iexact=email_raw).first() if email_raw else None
+        )
 
         if (
             username_raw
@@ -153,7 +163,9 @@ class RegisterForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name in ("username", "password1", "password2"):
-            self.fields[name].widget.attrs.update({"class": "input", "placeholder": " "})
+            self.fields[name].widget.attrs.update(
+                {"class": "input", "placeholder": " "}
+            )
         self.fields["email"].widget.attrs.setdefault("class", "input")
 
     def clean_email(self):
@@ -181,18 +193,24 @@ class PaymentForm(forms.Form):
     to_account_or_iban = forms.CharField(
         max_length=40,
         label="To account or IBAN",
-        widget=forms.TextInput(attrs={"class": "input", "placeholder": "Account number or IBAN"}),
+        widget=forms.TextInput(
+            attrs={"class": "input", "placeholder": "Account number or IBAN"}
+        ),
     )
     amount = forms.DecimalField(
         min_value=Decimal("0.01"),
         max_digits=14,
         decimal_places=2,
-        widget=forms.NumberInput(attrs={"class": "input", "step": "0.01", "placeholder": "0.00"}),
+        widget=forms.NumberInput(
+            attrs={"class": "input", "step": "0.01", "placeholder": "0.00"}
+        ),
     )
     description = forms.CharField(
         max_length=255,
         required=False,
-        widget=forms.TextInput(attrs={"class": "input", "placeholder": "Payment reference"}),
+        widget=forms.TextInput(
+            attrs={"class": "input", "placeholder": "Payment reference"}
+        ),
     )
 
     def clean_to_account_or_iban(self):

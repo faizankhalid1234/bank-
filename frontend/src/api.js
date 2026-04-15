@@ -38,7 +38,14 @@ function errorMessageFromResponse(data) {
         if (typeof v === "string") return v;
         return null;
       };
-      for (const key of ["password", "identifier", "email", "username", "non_field_errors", "__all__"]) {
+      for (const key of [
+        "password",
+        "identifier",
+        "email",
+        "username",
+        "non_field_errors",
+        "__all__",
+      ]) {
         const m = pick(key);
         if (m) return m;
       }

@@ -30,7 +30,9 @@ class Command(BaseCommand):
         raw = (options["phone"] or "").strip()
         to_e164 = normalize_phone(raw)
         if not validate_phone_e164(to_e164):
-            self.stderr.write(self.style.ERROR(f"Invalid phone after normalize: {to_e164!r}"))
+            self.stderr.write(
+                self.style.ERROR(f"Invalid phone after normalize: {to_e164!r}")
+            )
             return
 
         if not _twilio_configured():
@@ -51,7 +53,9 @@ class Command(BaseCommand):
         if ok:
             self.stdout.write(self.style.SUCCESS("SMS sent OK. Check your phone."))
         else:
-            self.stderr.write(self.style.ERROR(f"Twilio error: {err[:800] if err else 'unknown'}"))
+            self.stderr.write(
+                self.style.ERROR(f"Twilio error: {err[:800] if err else 'unknown'}")
+            )
             code = None
             try:
                 code = int((json.loads(err or "{}") or {}).get("code"))

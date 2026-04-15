@@ -10,7 +10,9 @@ try:
 except ImportError:
     pass
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "alybank-dev-change-in-production-use-env")
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY", "alybank-dev-change-in-production-use-env"
+)
 
 # Production: set DEBUG=0 or DEBUG=false in environment.
 _debug_raw = (os.environ.get("DEBUG", "") or "").strip().lower()
@@ -124,7 +126,9 @@ else:
     }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -210,11 +214,13 @@ TWILIO_API_KEY_SID = os.environ.get("TWILIO_API_KEY_SID", "").strip()
 TWILIO_API_KEY_SECRET = os.environ.get("TWILIO_API_KEY_SECRET", "").strip()
 TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
 # Optional: use a Messaging Service instead of From (set either this or TWILIO_FROM_NUMBER).
-TWILIO_MESSAGING_SERVICE_SID = os.environ.get("TWILIO_MESSAGING_SERVICE_SID", "").strip()
+TWILIO_MESSAGING_SERVICE_SID = os.environ.get(
+    "TWILIO_MESSAGING_SERVICE_SID", ""
+).strip()
 # Local only: if 1 and DEBUG, Twilio SMS fail hone par bhi JSON mein OTP (trial debug).
-SMS_OTP_FALLBACK_ON_TWILIO_FAIL = (
-    os.environ.get("SMS_OTP_FALLBACK_ON_TWILIO_FAIL", "").strip().lower() in ("1", "true", "yes")
-)
+SMS_OTP_FALLBACK_ON_TWILIO_FAIL = os.environ.get(
+    "SMS_OTP_FALLBACK_ON_TWILIO_FAIL", ""
+).strip().lower() in ("1", "true", "yes")
 
 # Optional override (usually keep empty): if set, OTP is always sent to this E.164 number.
 # Leave empty to send OTP to the user's submitted phone number.
@@ -229,8 +235,10 @@ BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "").strip()
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp-relay.brevo.com").strip()
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1").lower() not in ("0", "false", "no")
-EMAIL_HOST_USER = (os.environ.get("EMAIL_HOST_USER", "").strip() or BREVO_SMTP_LOGIN)
-EMAIL_HOST_PASSWORD = (os.environ.get("EMAIL_HOST_PASSWORD", "").strip() or BREVO_SMTP_KEY)
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip() or BREVO_SMTP_LOGIN
+EMAIL_HOST_PASSWORD = (
+    os.environ.get("EMAIL_HOST_PASSWORD", "").strip() or BREVO_SMTP_KEY
+)
 
 _default_from_env = os.environ.get("DEFAULT_FROM_EMAIL", "").strip()
 if _default_from_env:
@@ -250,5 +258,7 @@ if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
 else:
     EMAIL_BACKEND = os.environ.get(
         "EMAIL_BACKEND",
-        "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",
+        "django.core.mail.backends.console.EmailBackend"
+        if DEBUG
+        else "django.core.mail.backends.smtp.EmailBackend",
     )

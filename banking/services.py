@@ -4,7 +4,12 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Q
 
-from .models import BankAccount, Transaction, iban_for_account_number, next_account_number
+from .models import (
+    BankAccount,
+    Transaction,
+    iban_for_account_number,
+    next_account_number,
+)
 
 
 def find_recipient(account_or_iban: str) -> BankAccount | None:
@@ -26,7 +31,9 @@ def find_recipient(account_or_iban: str) -> BankAccount | None:
 
 
 @transaction.atomic
-def apply_credit(account: BankAccount, amount: Decimal, description: str = "") -> Transaction:
+def apply_credit(
+    account: BankAccount, amount: Decimal, description: str = ""
+) -> Transaction:
     locked = BankAccount.objects.select_for_update().get(pk=account.pk)
     locked.balance += amount
     locked.save(update_fields=["balance"])
@@ -40,7 +47,9 @@ def apply_credit(account: BankAccount, amount: Decimal, description: str = "") -
 
 
 @transaction.atomic
-def apply_debit(account: BankAccount, amount: Decimal, description: str = "") -> Transaction:
+def apply_debit(
+    account: BankAccount, amount: Decimal, description: str = ""
+) -> Transaction:
     locked = BankAccount.objects.select_for_update().get(pk=account.pk)
     if locked.balance < amount:
         raise ValueError("Insufficient balance.")
@@ -56,7 +65,9 @@ def apply_debit(account: BankAccount, amount: Decimal, description: str = "") ->
 
 
 @transaction.atomic
-def transfer(sender: BankAccount, recipient: BankAccount, amount: Decimal, description: str = "") -> tuple[Transaction, Transaction]:
+def transfer(
+    sender: BankAccount, recipient: BankAccount, amount: Decimal, description: str = ""
+) -> tuple[Transaction, Transaction]:
     if sender.pk == recipient.pk:
         raise ValueError("Cannot pay yourself.")
     s = BankAccount.objects.select_for_update().get(pk=sender.pk)

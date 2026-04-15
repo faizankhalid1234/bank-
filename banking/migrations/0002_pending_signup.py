@@ -5,25 +5,32 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('banking', '0001_initial'),
+        ("banking", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PendingSignup',
+            name="PendingSignup",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('username', models.CharField(max_length=150)),
-                ('email', models.EmailField(blank=True, default='', max_length=254)),
-                ('password_hash', models.CharField(max_length=128)),
-                ('otp_hash', models.CharField(max_length=64)),
-                ('expires_at', models.DateTimeField(db_index=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("username", models.CharField(max_length=150)),
+                ("email", models.EmailField(blank=True, default="", max_length=254)),
+                ("password_hash", models.CharField(max_length=128)),
+                ("otp_hash", models.CharField(max_length=64)),
+                ("expires_at", models.DateTimeField(db_index=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
     ]

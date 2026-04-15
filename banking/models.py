@@ -31,7 +31,9 @@ class BankAccount(models.Model):
     )
     account_number = models.CharField(max_length=32, unique=True, db_index=True)
     iban = models.CharField(max_length=34, unique=True, db_index=True)
-    balance = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    balance = models.DecimalField(
+        max_digits=14, decimal_places=2, default=Decimal("0.00")
+    )
 
     class Meta:
         ordering = ["id"]
@@ -92,7 +94,9 @@ class PendingSignup(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=150)
     email = models.EmailField(blank=True, default="")
-    phone_number = models.CharField(max_length=20, db_index=True, default="", blank=True)
+    phone_number = models.CharField(
+        max_length=20, db_index=True, default="", blank=True
+    )
     password_hash = models.CharField(max_length=128)
     otp_hash = models.CharField(max_length=64)
     email_otp_hash = models.CharField(max_length=64, default="", blank=True)

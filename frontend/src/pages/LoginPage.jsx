@@ -30,8 +30,8 @@ export function LoginPage() {
         <p className="auth-eyebrow">Welcome back</p>
         <h1 className="auth-title">Sign in</h1>
         <p className="auth-sub">
-          Apna <strong>username</strong> ya <strong>email</strong> ek hi box mein likho, phir password — is se autofill wala
-          masla nahi aata.
+          Apna <strong>username</strong> ya <strong>email</strong> ek hi box mein likho, phir
+          password — is se autofill wala masla nahi aata.
         </p>
         <form className="auth-form" onSubmit={onSubmit}>
           {error ? (

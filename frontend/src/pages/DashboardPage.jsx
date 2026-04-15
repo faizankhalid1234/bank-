@@ -18,8 +18,9 @@ export function DashboardPage() {
               <span className="dash-hero-em">calm, clear, and in your control.</span>
             </h1>
             <p className="dash-hero-lead">
-              This is a <strong>portfolio demo</strong>: send payments to other AlyBank accounts, view activity and
-              receipts. Account top-ups and debits are done by <strong>staff in Django admin</strong> — not from here.
+              This is a <strong>portfolio demo</strong>: send payments to other AlyBank accounts,
+              view activity and receipts. Account top-ups and debits are done by{" "}
+              <strong>staff in Django admin</strong> — not from here.
             </p>
             <ul className="dash-hero-tags" aria-label="Stack">
               <li>Django</li>
@@ -67,7 +68,9 @@ export function DashboardPage() {
                       </span>
                     )}
                   </div>
-                  <p className="dash-hero-wallet-hint">Tap the card to {revealed ? "hide" : "reveal"} your balance.</p>
+                  <p className="dash-hero-wallet-hint">
+                    Tap the card to {revealed ? "hide" : "reveal"} your balance.
+                  </p>
                 </div>
                 <div className="dash-wallet-inset">
                   <div className="dash-wallet-inset-top">
@@ -109,8 +112,8 @@ export function DashboardPage() {
               </div>
             </dl>
             <p className="dash-panel-lead" style={{ marginTop: "0.75rem" }}>
-              Credits and debits on your balance are posted by administrators in Django admin — customers cannot add
-              money to their own account from this app.
+              Credits and debits on your balance are posted by administrators in Django admin —
+              customers cannot add money to their own account from this app.
             </p>
           </section>
 

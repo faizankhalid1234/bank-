@@ -73,8 +73,9 @@ export function HistoryPage() {
           <p className="form-eyebrow">Ledger</p>
           <h1 className="form-title">Activity</h1>
           <p className="form-lead">
-            Sirf <strong>apne account</strong> ki entries — naya sign-up ho ya &quot;Get started free&quot;, har user ko
-            sirf apna data dikhega; kisi aur customer ka activity yahan nahi aata.
+            Sirf <strong>apne account</strong> ki entries — naya sign-up ho ya &quot;Get started
+            free&quot;, har user ko sirf apna data dikhega; kisi aur customer ka activity yahan nahi
+            aata.
           </p>
           {account?.account_number ? (
             <p className="history-scope mono">
@@ -126,8 +127,8 @@ export function HistoryPage() {
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={5} className="muted">
-                  Abhi koi transaction nahi — naye account par list khali hoti hai. Jab tum payment bhejoge ya admin
-                  credit/debit karega, sirf tumhari yahi entries yahan dikhengi.
+                  Abhi koi transaction nahi — naye account par list khali hoti hai. Jab tum payment
+                  bhejoge ya admin credit/debit karega, sirf tumhari yahi entries yahan dikhengi.
                 </td>
               </tr>
             ) : (

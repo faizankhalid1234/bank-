@@ -44,9 +44,7 @@ def _registration_otp_message(sms_key: str, masked: str) -> str:
             "Neeche wala code copy karke paste karein. Production SMS ke liye Twilio keys + paid/trial verified number zaroori."
         )
     if sms_key == "sms_dev_console":
-        return (
-            "SMS service configure nahi. OTP sirf server log/terminal par hai — administrator se rabta karein."
-        )
+        return "SMS service configure nahi. OTP sirf server log/terminal par hai — administrator se rabta karein."
     if sms_key == "sms_trial_unverified":
         return (
             "Twilio ne SMS reject ki (trial / verified number / permission). "
@@ -73,13 +71,9 @@ def _registration_email_otp_message(email_key: str, email_addr: str) -> str:
             "Brevo ka verified sender sirf 'From' hota hai; OTP recipient wohi hota hai jo form mein likha."
         )
     if email_key == "email_demo":
-        return (
-            "Demo — email OTP neeche app mein dikhaya gaya (SMTP configure nahi ya DEBUG fallback)."
-        )
+        return "Demo — email OTP neeche app mein dikhaya gaya (SMTP configure nahi ya DEBUG fallback)."
     if email_key == "email_not_configured":
-        return (
-            "Email SMTP configure nahi (.env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY). Abhi sirf SMS code se aage badh sakte ho nahi — dono chahiye."
-        )
+        return "Email SMTP configure nahi (.env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY). Abhi sirf SMS code se aage badh sakte ho nahi — dono chahiye."
     return "Email par code nahi bheja ja saka. .env / Brevo SMTP check karein."
 
 
@@ -133,7 +127,10 @@ class LoginView(APIView):
         form = AlyAuthForm(getattr(request, "_request", request), data=request.data)
         if not form.is_valid():
             return Response(
-                {"detail": "Invalid username, email, or password.", "errors": form.errors},
+                {
+                    "detail": "Invalid username, email, or password.",
+                    "errors": form.errors,
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user = form.get_user()
@@ -194,7 +191,9 @@ class RegisterRequestView(APIView):
         while email_otp == sms_otp:
             email_otp = _generate_otp()
 
-        _, email_key, email_otp_for_client = send_registration_email_otp(email, email_otp)
+        _, email_key, email_otp_for_client = send_registration_email_otp(
+            email, email_otp
+        )
         if email_key == "email_failed":
             return Response(
                 {
@@ -212,7 +211,9 @@ class RegisterRequestView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        _, sms_key, otp_for_client, sms_twilio_code = send_registration_otp(phone, sms_otp)
+        _, sms_key, otp_for_client, sms_twilio_code = send_registration_otp(
+            phone, sms_otp
+        )
         masked = mask_phone(phone)
         pending = PendingSignup.objects.create(
             username=username,
@@ -284,7 +285,10 @@ class RegisterConfirmView(APIView):
                 {"detail": "Wrong SMS verification code. Try again."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if not pending.email_otp_hash or _hash_otp(email_otp_raw) != pending.email_otp_hash:
+        if (
+            not pending.email_otp_hash
+            or _hash_otp(email_otp_raw) != pending.email_otp_hash
+        ):
             return Response(
                 {"detail": "Wrong email verification code. Try again."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -299,7 +303,9 @@ class RegisterConfirmView(APIView):
         if not pending.phone_number:
             pending.delete()
             return Response(
-                {"detail": "Phone number is missing or signup is invalid. Start again."},
+                {
+                    "detail": "Phone number is missing or signup is invalid. Start again."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:

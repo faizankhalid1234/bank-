@@ -50,6 +50,8 @@ html[data-theme="dark"] {
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: clip;
 }
 
 body {
@@ -60,6 +62,8 @@ body {
   color: var(--text);
   background: var(--glow), linear-gradient(165deg, var(--bg0), var(--bg1));
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
 }
 
 #root {
@@ -155,6 +159,14 @@ a {
 @media (max-width: 720px) {
   .topbar {
     align-items: flex-start;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    padding-top: max(0.35rem, env(safe-area-inset-top, 0));
+    margin-bottom: 1rem;
+    background: var(--surface-solid);
+    box-shadow: 0 1px 0 var(--border);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   }
 
   .nav {
@@ -185,6 +197,37 @@ a {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+  }
+
+  /* iOS: 16px+ inputs avoid zoom jump; stable tap targets */
+  button,
+  .btn,
+  .landing-btn,
+  .nav a,
+  .nav .link,
+  .theme-toggle {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input.input[type="text"],
+  input.input[type="email"],
+  input.input[type="password"],
+  input.input[type="tel"],
+  textarea.input {
+    font-size: 16px;
+    min-height: 48px;
+  }
+
+  .otp-input {
+    font-size: 18px;
+    min-height: 52px;
+  }
+
+  .auth-title,
+  .landing-hero-title {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
 
@@ -307,7 +350,9 @@ a {
   border-radius: 14px;
   font-weight: 600;
   border: 1px solid transparent;
-  transition: transform var(--transition), box-shadow var(--transition);
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition);
 }
 
 .landing-btn--primary {
@@ -322,8 +367,10 @@ a {
   backdrop-filter: blur(10px);
 }
 
-.landing-btn:hover {
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .landing-btn:hover {
+    transform: translateY(-1px);
+  }
 }
 
 .landing-hero-foot {
@@ -640,7 +687,9 @@ html[data-theme="light"] .landing-wallet-card {
   padding: 0.75rem 0.85rem;
   font: inherit;
   outline: none;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .input:focus {
@@ -659,7 +708,10 @@ html[data-theme="light"] .landing-wallet-card {
   border: 1px solid transparent;
   cursor: pointer;
   font: inherit;
-  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition),
+    background var(--transition);
 }
 
 .btn:disabled {
@@ -673,8 +725,10 @@ html[data-theme="light"] .landing-wallet-card {
   box-shadow: 0 14px 34px rgba(37, 99, 235, 0.22);
 }
 
-.btn--primary:hover:not(:disabled) {
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .btn--primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
 }
 
 .btn--block {
@@ -969,9 +1023,11 @@ html[data-theme="light"] .dash-wallet-inset {
   padding: 1.15rem 1.2rem;
 }
 
-.dash-panel--lift:hover {
-  transform: translateY(-2px);
-  transition: transform var(--transition);
+@media (hover: hover) and (pointer: fine) {
+  .dash-panel--lift:hover {
+    transform: translateY(-2px);
+    transition: transform var(--transition);
+  }
 }
 
 .dash-panel-title {
@@ -1327,4 +1383,15 @@ html[data-theme="dark"] .site-footer {
   border-top: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

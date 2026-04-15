@@ -69,11 +69,19 @@ def payment_view(request):
             raw = form.cleaned_data["to_account_or_iban"]
             recipient = find_recipient(raw)
             if recipient is None:
-                messages.error(request, "No AlyBank account found for that number or IBAN.")
-                return render(request, "banking/payment.html", {"form": form, "account": account})
+                messages.error(
+                    request, "No AlyBank account found for that number or IBAN."
+                )
+                return render(
+                    request, "banking/payment.html", {"form": form, "account": account}
+                )
             if recipient.pk == account.pk:
-                messages.error(request, "You cannot send a payment to your own account.")
-                return render(request, "banking/payment.html", {"form": form, "account": account})
+                messages.error(
+                    request, "You cannot send a payment to your own account."
+                )
+                return render(
+                    request, "banking/payment.html", {"form": form, "account": account}
+                )
             try:
                 out_tx, _ = transfer(
                     account,
@@ -83,7 +91,9 @@ def payment_view(request):
                 )
             except ValueError as e:
                 messages.error(request, str(e))
-                return render(request, "banking/payment.html", {"form": form, "account": account})
+                return render(
+                    request, "banking/payment.html", {"form": form, "account": account}
+                )
             return redirect("banking:receipt", pk=out_tx.pk)
     else:
         form = PaymentForm()

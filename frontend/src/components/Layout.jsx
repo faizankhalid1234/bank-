@@ -112,7 +112,9 @@ export function Layout() {
               <span>AlyBank</span>
             </Link>
             <p className="site-footer-tagline">Banking that feels effortless</p>
-            <p className="site-footer-disclaimer">Demo banking UI — not a real financial institution.</p>
+            <p className="site-footer-disclaimer">
+              Demo banking UI — not a real financial institution.
+            </p>
           </div>
           <div className="site-footer-col">
             <h3 className="site-footer-heading">Product</h3>
@@ -161,12 +163,20 @@ export function Layout() {
             <h3 className="site-footer-heading">Connect</h3>
             <ul className="site-footer-links site-footer-links--social">
               <li>
-                <a href="https://github.com/faizankhalid1234" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://github.com/faizankhalid1234"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   GitHub
                 </a>
               </li>
               <li>
-                <a href="https://portfolio-faizan-topaz.vercel.app/" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://portfolio-faizan-topaz.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Portfolio
                 </a>
               </li>

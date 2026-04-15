@@ -2,7 +2,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("banking", "0007_pendingsignup_email_otp_hash"),
     ]

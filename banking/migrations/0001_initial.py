@@ -15,10 +15,26 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="BankAccount",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("account_number", models.CharField(db_index=True, max_length=32, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "account_number",
+                    models.CharField(db_index=True, max_length=32, unique=True),
+                ),
                 ("iban", models.CharField(db_index=True, max_length=34, unique=True)),
-                ("balance", models.DecimalField(decimal_places=2, default=Decimal("0.00"), max_digits=14)),
+                (
+                    "balance",
+                    models.DecimalField(
+                        decimal_places=2, default=Decimal("0.00"), max_digits=14
+                    ),
+                ),
                 (
                     "user",
                     models.OneToOneField(
@@ -35,8 +51,27 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Transaction",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("kind", models.CharField(choices=[("credit", "Credit"), ("debit", "Debit"), ("payment_sent", "Payment sent"), ("payment_received", "Payment received")], max_length=32)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "kind",
+                    models.CharField(
+                        choices=[
+                            ("credit", "Credit"),
+                            ("debit", "Debit"),
+                            ("payment_sent", "Payment sent"),
+                            ("payment_received", "Payment received"),
+                        ],
+                        max_length=32,
+                    ),
+                ),
                 ("amount", models.DecimalField(decimal_places=2, max_digits=14)),
                 ("balance_after", models.DecimalField(decimal_places=2, max_digits=14)),
                 ("description", models.CharField(blank=True, max_length=255)),

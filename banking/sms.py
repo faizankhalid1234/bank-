@@ -65,7 +65,9 @@ def send_registration_otp(
     sms_demo + OTP for local trial debugging only.
     """
     from_num = (getattr(settings, "TWILIO_FROM_NUMBER", "") or "").strip()
-    messaging_sid = (getattr(settings, "TWILIO_MESSAGING_SERVICE_SID", "") or "").strip()
+    messaging_sid = (
+        getattr(settings, "TWILIO_MESSAGING_SERVICE_SID", "") or ""
+    ).strip()
     body = f"AlyBank verification code: {otp}. Valid 10 minutes. Do not share."
 
     if _twilio_configured():
@@ -77,7 +79,10 @@ def send_registration_otp(
         code = _twilio_error_code(err)
         _fallback = getattr(settings, "SMS_OTP_FALLBACK_ON_TWILIO_FAIL", False)
         if getattr(settings, "DEBUG", False) and _fallback:
-            logger.info("Twilio failure + SMS_OTP_FALLBACK_ON_TWILIO_FAIL: demo OTP for %s", phone_e164)
+            logger.info(
+                "Twilio failure + SMS_OTP_FALLBACK_ON_TWILIO_FAIL: demo OTP for %s",
+                phone_e164,
+            )
             return True, "sms_demo", otp, code
         if code in _TWILIO_QUOTA_CODES:
             return False, "sms_quota_exceeded", None, code

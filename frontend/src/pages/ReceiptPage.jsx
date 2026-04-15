@@ -96,7 +96,12 @@ export function ReceiptPage() {
           </div>
         ) : null}
         <div className="form-actions">
-          <button type="button" className="btn btn--primary" onClick={save} disabled={busy || tx.user_saved}>
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={save}
+            disabled={busy || tx.user_saved}
+          >
             {tx.user_saved ? "Saved" : busy ? "Saving…" : "Save to list"}
           </button>
           <Link className="btn btn--ghost" to="/history">

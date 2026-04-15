@@ -124,7 +124,16 @@ class TransactionAdmin(admin.ModelAdmin):
 class PendingSignupAdmin(admin.ModelAdmin):
     list_display = ("username", "email", "phone_number", "expires_at", "created_at")
     search_fields = ("username", "email", "phone_number")
-    readonly_fields = ("id", "username", "email", "phone_number", "password_hash", "otp_hash", "expires_at", "created_at")
+    readonly_fields = (
+        "id",
+        "username",
+        "email",
+        "phone_number",
+        "password_hash",
+        "otp_hash",
+        "expires_at",
+        "created_at",
+    )
     ordering = ("-created_at",)
 
     def has_add_permission(self, request):

@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("banking", "0002_pending_signup"),
@@ -16,7 +15,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="UserProfile",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("phone", models.CharField(db_index=True, max_length=20, unique=True)),
                 (
                     "user",
@@ -34,6 +41,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="pendingsignup",
             name="phone_number",
-            field=models.CharField(blank=True, db_index=True, default="", max_length=20),
+            field=models.CharField(
+                blank=True, db_index=True, default="", max_length=20
+            ),
         ),
     ]

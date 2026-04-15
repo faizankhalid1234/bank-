@@ -10,6 +10,7 @@ from django.core.mail import EmailMultiAlternatives
 
 logger = logging.getLogger(__name__)
 
+
 def _smtp_credentials_set() -> bool:
     u = (getattr(settings, "EMAIL_HOST_USER", None) or "").strip()
     p = (getattr(settings, "EMAIL_HOST_PASSWORD", None) or "").strip()
@@ -147,7 +148,9 @@ def build_registration_otp_email(otp: str, to_email: str) -> tuple[str, str, str
     return subject, plain, html_body
 
 
-def send_registration_email_otp(to_email: str, otp: str) -> tuple[bool, str, str | None]:
+def send_registration_email_otp(
+    to_email: str, otp: str
+) -> tuple[bool, str, str | None]:
     """
     Send HTML OTP email. Returns (success_flag, message_key, otp_for_json_or_none).
 

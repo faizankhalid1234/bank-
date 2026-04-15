@@ -7,10 +7,13 @@ export function LandingPage() {
         <div className="landing-hero-grid">
           <div className="landing-hero-copy">
             <p className="landing-eyebrow">React + Django</p>
-            <h1 className="landing-hero-title">Banking that feels calm, clear, and in your control.</h1>
+            <h1 className="landing-hero-title">
+              Banking that feels calm, clear, and in your control.
+            </h1>
             <p className="landing-hero-lead">
-              <strong>AlyBank</strong> is a portfolio playground: IBAN transfers, activity history, and a polished
-              glass UI — fork it, run locally, and experiment. <strong>Not a licensed institution; no real money.</strong>
+              <strong>AlyBank</strong> is a portfolio playground: IBAN transfers, activity history,
+              and a polished glass UI — fork it, run locally, and experiment.{" "}
+              <strong>Not a licensed institution; no real money.</strong>
             </p>
             <ul className="landing-tags" aria-label="Stack">
               <li>Open source</li>
@@ -28,10 +31,18 @@ export function LandingPage() {
               </Link>
             </div>
             <div className="landing-hero-foot">
-              <a href="https://github.com/faizankhalid1234" target="_blank" rel="noopener noreferrer">
+              <a
+                href="https://github.com/faizankhalid1234"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Star &amp; fork on GitHub ↗
               </a>
-              <a href="https://portfolio-faizan-topaz.vercel.app/" target="_blank" rel="noopener noreferrer">
+              <a
+                href="https://portfolio-faizan-topaz.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Live portfolio →
               </a>
             </div>
@@ -69,8 +80,8 @@ export function LandingPage() {
         <div className="feature-band-inner">
           <h2 className="feature-band-title">Why it feels lovely</h2>
           <p className="feature-band-lead">
-            Soft gradients, glass surfaces, and motion that respects your eyes — built to feel like a real product,
-            not a tutorial page.
+            Soft gradients, glass surfaces, and motion that respects your eyes — built to feel like
+            a real product, not a tutorial page.
           </p>
           <div className="feature-grid">
             <article className="feature-card">
@@ -83,7 +94,10 @@ export function LandingPage() {
             </article>
             <article className="feature-card">
               <h3>Real flows</h3>
-              <p>Pay, receipts, activity — wired to Django sessions and SQLite. Ledger credits/debits are staff-only in admin.</p>
+              <p>
+                Pay, receipts, activity — wired to Django sessions and SQLite. Ledger credits/debits
+                are staff-only in admin.
+              </p>
             </article>
           </div>
         </div>
