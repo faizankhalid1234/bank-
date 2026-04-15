@@ -48,7 +48,7 @@ class Command(BaseCommand):
 
         self.stdout.write(f"From: {from_email}\nTo:   {to}\nSMTP: {settings.EMAIL_HOST_USER} @ {settings.EMAIL_HOST}")
 
-        subject, plain, html_body = build_registration_otp_email("123456")
+        subject, plain, html_body = build_registration_otp_email("123456", to)
         subject = "[Test] " + subject
 
         msg = EmailMultiAlternatives(subject, plain, from_email, [to])
@@ -56,7 +56,7 @@ class Command(BaseCommand):
 
         try:
             msg.send(fail_silently=False)
-            self.stdout.write(self.style.SUCCESS("Email sent. Check Gmail inbox + Spam."))
+            self.stdout.write(self.style.SUCCESS("Email sent. Check that inbox + Spam/Promotions."))
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"Send failed: {e}"))
 

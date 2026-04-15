@@ -41,13 +41,16 @@ def _otp_digits_row(otp: str) -> str:
     return "".join(cells)
 
 
-def build_registration_otp_email(otp: str) -> tuple[str, str, str]:
+def build_registration_otp_email(otp: str, to_email: str) -> tuple[str, str, str]:
     """
     Returns (subject, plain_text, html_body).
     """
+    to_safe = html.escape((to_email or "").strip())
     subject = "AlyBank — your verification code (almost there!)"
     plain = (
         f"Hi from AlyBank 💚\n\n"
+        f"This email was sent to: {(to_email or '').strip()}\n"
+        f"(Use the code below only if this is your address.)\n\n"
         f"Your email verification code is: {otp}\n\n"
         "It's valid for 10 minutes — just for you. Please don't share it with anyone.\n\n"
         "If you weren't signing up, you can ignore this email and we'll leave you in peace.\n"
@@ -77,6 +80,9 @@ def build_registration_otp_email(otp: str) -> tuple[str, str, str]:
               <div style="font-size:32px;font-weight:700;color:#ffffff;letter-spacing:-0.02em;line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.12);">{bank_name}</div>
               <div style="margin-top:14px;font-size:15px;color:rgba(255,255,255,0.95);line-height:1.45;max-width:340px;margin-left:auto;margin-right:auto;">
                 A tiny step left — confirm your email so we know it&apos;s really you ✨
+              </div>
+              <div style="margin-top:16px;font-size:13px;color:rgba(255,255,255,0.88);line-height:1.4;word-break:break-all;">
+                Sent to: {to_safe}
               </div>
             </td>
           </tr>
@@ -158,7 +164,7 @@ def send_registration_email_otp(to_email: str, otp: str) -> tuple[bool, str, str
         logger.warning("Email SMTP not configured — cannot send OTP to %s", to_email)
         return False, "email_not_configured", None
 
-    subject, plain, html_body = build_registration_otp_email(otp)
+    subject, plain, html_body = build_registration_otp_email(otp, to_email)
     from_email = transactional_from_email()
     if not from_email:
         logger.error(

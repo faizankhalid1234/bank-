@@ -26,6 +26,7 @@ export function RegisterPage() {
   const [password2, setPassword2] = useState("");
   const [pendingId, setPendingId] = useState("");
   const [verifyHint, setVerifyHint] = useState("");
+  const [emailOtpDestination, setEmailOtpDestination] = useState("");
   const [phoneMasked, setPhoneMasked] = useState("");
   /** Only when API explicitly in demo mode — not when real SMS/email sent */
   const [demoSmsOtp, setDemoSmsOtp] = useState("");
@@ -49,6 +50,7 @@ export function RegisterPage() {
     setPhase("details");
     setPendingId("");
     setVerifyHint("");
+    setEmailOtpDestination("");
     setPhoneMasked("");
     setDemoSmsOtp("");
     setDemoEmailOtp("");
@@ -76,6 +78,11 @@ export function RegisterPage() {
       setPendingId(data.pending_id);
       setPhoneMasked(typeof data.phone_masked === "string" ? data.phone_masked : "");
       setVerifyHint([data.message, data.email_message].filter(Boolean).join(" ") || "");
+      setEmailOtpDestination(
+        typeof data.email_otp_sent_to === "string" && data.email_otp_sent_to
+          ? data.email_otp_sent_to
+          : (email || "").trim()
+      );
 
       const smsDemo = !!data.sms_demo;
       const emailDemo = !!data.email_demo;
@@ -131,22 +138,22 @@ export function RegisterPage() {
           <h1 className="auth-title">Open your AlyBank account</h1>
           <p className="auth-sub">
             {phase === "details"
-              ? "Apna sahi mobile number aur Gmail likho — SMS par ek code, email par alag code aayega."
+              ? "Apna mobile aur woh email likho jahan OTP lena hai — SMS aur email dono alag codes par jate hain."
               : bothReal
-                ? "Dono codes real tarah se bheje gaye: mobile SMS + Gmail inbox (Spam/Promotions bhi dekhein)."
+                ? "Dono codes bhej diye: SMS mobile par, email OTP usi email ke inbox mein (Spam/Promotions bhi dekhein)."
                 : showDemoPanel
                   ? "Neeche demo codes sirf tab dikhte hain jab server SMS/email demo mode mein ho — production mein yeh boxes nahi aate."
                   : delivery.smsQuotaExceeded && delivery.emailSent
                     ? "Email OTP inbox mein hai. SMS Twilio account ki daily limit (63038) ki wajah se nahi gaya — neeche detail padhein; SMS ke liye kal retry ya Twilio par limit barhao."
-                    : "Jo code SMS par aaya ho aur jo Gmail par, dono yahan likhein."}
+                    : "Jo code SMS par aaya ho aur jo email par, dono yahan likhein."}
           </p>
 
           {phase === "verify" && bothReal ? (
             <div className="alert alert--ok" role="status" style={{ marginBottom: "1rem" }}>
               <strong>Codes bhej diye gaye.</strong>{" "}
               {delivery.smsToFixedVerified
-                ? `SMS Twilio verified number par gaya${phoneMasked ? ` (${phoneMasked})` : ""} — wahi inbox check karein. Email OTP Gmail par.`
-                : "SMS aapke mobile par aur email OTP Gmail inbox mein aana chahiye — thori der wait karke SMS + Gmail check karein (Spam / Promotions folder bhi)."}
+                ? `SMS Twilio verified number par gaya${phoneMasked ? ` (${phoneMasked})` : ""} — wahi inbox check karein. Email OTP: ${emailOtpDestination || "neeche diya gaya inbox"}.`
+                : `SMS aapke mobile par aur email OTP ${emailOtpDestination ? `${emailOtpDestination} ke inbox` : "usi email ke inbox"} mein aana chahiye — thori der wait karke dono check karein (Spam / Promotions).`}
             </div>
           ) : null}
 
@@ -169,8 +176,7 @@ export function RegisterPage() {
                     ))}
                   </div>
                   <p className="otp-strip-note">
-                    Asli mobile par SMS ke liye Twilio sahi ho aur DEBUG par Twilio fail na ho. Trial par number
-                    verify karein.
+                    Production mein Twilio keys + account limits theek hon to SMS user ke diye hue number par jayega.
                   </p>
                 </div>
               ) : null}
@@ -190,7 +196,7 @@ export function RegisterPage() {
                     ))}
                   </div>
                   <p className="otp-strip-note">
-                    Gmail par asli mail ke liye .env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY + verified sender.
+                    Asli inbox ke liye .env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY + Brevo par verified sender (From).
                   </p>
                 </div>
               ) : null}
@@ -215,19 +221,19 @@ export function RegisterPage() {
                 />
               </label>
               <label className="field">
-                <span>Email (Gmail OTP yahan aayega)</span>
+                <span>Email (OTP isi inbox par jayega)</span>
                 <input
                   className="input"
                   type="email"
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@gmail.com"
+                  placeholder="you@example.com"
                   required
                 />
               </label>
               <label className="field">
-                <span>Mobile number (profile / identity)</span>
+                <span>Mobile number (SMS OTP is par)</span>
                 <input
                   className="input"
                   type="tel"
@@ -238,8 +244,7 @@ export function RegisterPage() {
                   required
                 />
                 <span className="field-hint" style={{ fontSize: "0.85rem", color: "var(--muted, #64748b)" }}>
-                  Twilio trial: SMS OTP server par set Twilio-verified number par jata hai; yahan woh number likho jo
-                  account profile mein save hona chahiye.
+                  Jo number yahan likho ge, Twilio SMS OTP usi par bhejega (Twilio account limits apply).
                 </span>
               </label>
               <label className="field">
@@ -289,7 +294,10 @@ export function RegisterPage() {
                 />
               </label>
               <label className="field">
-                <span>Email code (Gmail / inbox)</span>
+                <span>
+                  Email code
+                  {emailOtpDestination ? ` (${emailOtpDestination})` : ""}
+                </span>
                 <input
                   className="input otp-input"
                   inputMode="numeric"

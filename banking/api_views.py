@@ -68,7 +68,9 @@ def _registration_otp_message(sms_key: str, masked: str) -> str:
 def _registration_email_otp_message(email_key: str, email_addr: str) -> str:
     if email_key == "email_sent":
         return (
-            f"Email par 6 digit code bheja gaya: {email_addr} — Gmail / inbox check karein (Promotions/Spam bhi dekhein)."
+            f"6 digit code isi email par bheja gaya hai: {email_addr} — "
+            "usi inbox check karein (Spam / Promotions folder bhi dekhein). "
+            "Brevo ka verified sender sirf 'From' hota hai; OTP recipient wohi hota hai jo form mein likha."
         )
     if email_key == "email_demo":
         return (
@@ -179,7 +181,7 @@ class RegisterRequestView(APIView):
         if not email:
             return Response(
                 {
-                    "detail": "Valid email zaroori hai — OTP Gmail/inbox par jayega.",
+                    "detail": "Valid email zaroori hai — OTP usi email ke inbox par jayega.",
                     "errors": {"email": ["Enter a valid email address."]},
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -196,7 +198,7 @@ class RegisterRequestView(APIView):
         if email_key == "email_failed":
             return Response(
                 {
-                    "detail": "Email OTP nahi gaya. .env mein BREVO_SENDER_EMAIL = verified Gmail (Brevo Senders) + SMTP key check karein.",
+                    "detail": "Email OTP nahi gaya. Brevo Senders + SMTP (.env) check karein; recipient form wala email hota hai.",
                     "errors": {"email": ["Email delivery failed."]},
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -236,6 +238,7 @@ class RegisterRequestView(APIView):
             "email_sent": email_key == "email_sent",
             "email_demo": email_key == "email_demo",
             "email_message": _registration_email_otp_message(email_key, email),
+            "email_otp_sent_to": email,
         }
         if sms_twilio_code is not None:
             payload["sms_twilio_code"] = sms_twilio_code
