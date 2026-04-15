@@ -10,6 +10,20 @@ from .phone_utils import normalize_phone, validate_phone_e164
 
 
 class AlyAuthForm(AuthenticationForm):
+    # Single-field login (SPA sends this) — avoids browser autofill putting a wrong second email.
+    identifier = forms.CharField(
+        label="Username or email",
+        required=False,
+        max_length=254,
+        strip=True,
+        widget=forms.TextInput(
+            attrs={
+                "class": "input",
+                "autocomplete": "username",
+                "placeholder": "Username or email",
+            }
+        ),
+    )
     username = forms.CharField(
         label="Username",
         required=False,
@@ -39,12 +53,23 @@ class AlyAuthForm(AuthenticationForm):
     )
 
     def clean(self):
+        identifier = (self.cleaned_data.get("identifier") or "").strip()
         username_raw = (self.cleaned_data.get("username") or "").strip()
         email_raw = (self.cleaned_data.get("email") or "").strip()
         password = self.cleaned_data.get("password")
 
+        if identifier:
+            if "@" in identifier:
+                email_raw = identifier
+                username_raw = ""
+            else:
+                username_raw = identifier
+                email_raw = ""
+
         if not email_raw and not username_raw:
-            raise forms.ValidationError("Enter your username or email address.")
+            raise forms.ValidationError(
+                {"identifier": "Enter your username or email address."}
+            )
 
         if password is None or password == "":
             raise forms.ValidationError({"password": "Enter your password."})

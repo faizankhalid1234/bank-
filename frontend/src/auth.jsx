@@ -33,9 +33,12 @@ export function AuthProvider({ children }) {
     })();
   }, []);
 
-  const login = useCallback(async ({ username, email, password }) => {
+  const login = useCallback(async ({ identifier, password }) => {
     await ensureCsrf();
-    const data = await api.post("/auth/login/", { username, email, password });
+    const data = await api.post("/auth/login/", {
+      identifier: (identifier || "").trim(),
+      password,
+    });
     if (data.token) setAuthToken(data.token);
     setMe({ user: data.user, account: data.account });
     return data;

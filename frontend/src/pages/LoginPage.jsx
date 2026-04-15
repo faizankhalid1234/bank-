@@ -5,8 +5,7 @@ import { useAuth } from "../auth.jsx";
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -16,7 +15,7 @@ export function LoginPage() {
     setError("");
     setBusy(true);
     try {
-      await login({ username, email, password });
+      await login({ identifier, password });
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Sign in failed.");
@@ -31,8 +30,8 @@ export function LoginPage() {
         <p className="auth-eyebrow">Welcome back</p>
         <h1 className="auth-title">Sign in</h1>
         <p className="auth-sub">
-          Username <strong>ya</strong> email — <strong>ek hi</strong> bharo (dono bharo to dono same account ke hon). Galat
-          autofill email khali karke dubara try karein agar password sahi ho ke bhi error aaye.
+          Apna <strong>username</strong> ya <strong>email</strong> ek hi box mein likho, phir password — is se autofill wala
+          masla nahi aata.
         </p>
         <form className="auth-form" onSubmit={onSubmit}>
           {error ? (
@@ -41,27 +40,17 @@ export function LoginPage() {
             </div>
           ) : null}
           <label className="field">
-            <span>Username</span>
+            <span>Username ya email</span>
             <input
               className="input"
               type="text"
               autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="username ya you@example.com"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
             />
           </label>
-          <label className="field">
-            <span>Email</span>
-            <input
-              className="input"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
-          <p className="field-hint">Username or email — fill at least one.</p>
           <label className="field">
             <span>Password</span>
             <input
