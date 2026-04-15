@@ -118,7 +118,7 @@ def _twilio_send(
     req.add_header("Authorization", _twilio_basic_auth_header())
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
     try:
-        with urlopen(req, timeout=30) as resp:
+        with urlopen(req, timeout=18) as resp:
             raw = resp.read().decode(errors="replace")
             if resp.status not in (200, 201):
                 return False, raw

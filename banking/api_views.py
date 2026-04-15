@@ -1,7 +1,8 @@
+import concurrent.futures
 import hashlib
+import logging
 import secrets
 from datetime import timedelta
-from decimal import Decimal
 
 from django.contrib.auth import login, logout
 from django.contrib.auth.hashers import make_password
@@ -23,6 +24,8 @@ from .phone_utils import mask_phone, normalize_phone
 from .services import ensure_bank_account, find_recipient, transfer
 from .email_otp import send_registration_email_otp
 from .sms import send_registration_otp
+
+logger = logging.getLogger(__name__)
 
 
 def _user_payload(user: User) -> dict:
@@ -71,7 +74,10 @@ def _registration_email_otp_message(email_key: str, email_addr: str) -> str:
             "Brevo ka verified sender sirf 'From' hota hai; OTP recipient wohi hota hai jo form mein likha."
         )
     if email_key == "email_demo":
-        return "Demo — email OTP neeche app mein dikhaya gaya (SMTP configure nahi ya DEBUG fallback)."
+        return (
+            "Demo — email OTP app/JSON mein (SMTP nahi set ya DEBUG + EMAIL_OTP_FALLBACK_ON_FAIL=1). "
+            "Asli inbox ke liye Railway .env par Brevo SMTP + BREVO_SENDER_EMAIL set karein; production par DEBUG=0."
+        )
     if email_key == "email_not_configured":
         return "Email SMTP configure nahi (.env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY). Abhi sirf SMS code se aage badh sakte ho nahi — dono chahiye."
     return "Email par code nahi bheja ja saka. .env / Brevo SMTP check karein."
@@ -191,9 +197,49 @@ class RegisterRequestView(APIView):
         while email_otp == sms_otp:
             email_otp = _generate_otp()
 
-        _, email_key, email_otp_for_client = send_registration_email_otp(
-            email, email_otp
-        )
+        # Email + SMS in parallel — register request latency ≈ max(email, sms), not sum.
+        _send_timeout = 45
+
+        def _email_job():
+            return send_registration_email_otp(email, email_otp)
+
+        def _sms_job():
+            return send_registration_otp(phone, sms_otp)
+
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                fut_email = pool.submit(_email_job)
+                fut_sms = pool.submit(_sms_job)
+                try:
+                    _, email_key, email_otp_for_client = fut_email.result(
+                        timeout=_send_timeout
+                    )
+                except concurrent.futures.TimeoutError:
+                    return Response(
+                        {
+                            "detail": "Email SMTP timeout — Brevo slow ya blocked. EMAIL_TIMEOUT / network check karein.",
+                            "errors": {"email": ["Email send timed out."]},
+                        },
+                        status=status.HTTP_504_GATEWAY_TIMEOUT,
+                    )
+                try:
+                    _, sms_key, otp_for_client, sms_twilio_code = fut_sms.result(
+                        timeout=_send_timeout
+                    )
+                except concurrent.futures.TimeoutError:
+                    return Response(
+                        {
+                            "detail": "SMS (Twilio) timeout — network ya Twilio check karein.",
+                            "errors": {"phone": ["SMS send timed out."]},
+                        },
+                        status=status.HTTP_504_GATEWAY_TIMEOUT,
+                    )
+        except Exception:
+            logger.exception("register/request parallel send failed")
+            return Response(
+                {"detail": "Verification codes could not be sent. Try again shortly."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         if email_key == "email_failed":
             return Response(
                 {
@@ -210,10 +256,6 @@ class RegisterRequestView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        _, sms_key, otp_for_client, sms_twilio_code = send_registration_otp(
-            phone, sms_otp
-        )
         masked = mask_phone(phone)
         pending = PendingSignup.objects.create(
             username=username,

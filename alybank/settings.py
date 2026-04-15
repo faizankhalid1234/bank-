@@ -221,6 +221,10 @@ TWILIO_MESSAGING_SERVICE_SID = os.environ.get(
 SMS_OTP_FALLBACK_ON_TWILIO_FAIL = os.environ.get(
     "SMS_OTP_FALLBACK_ON_TWILIO_FAIL", ""
 ).strip().lower() in ("1", "true", "yes")
+# Local only: if 1 and DEBUG, SMTP email fail par JSON mein email OTP (debug). Production par 0 rakhein.
+EMAIL_OTP_FALLBACK_ON_FAIL = os.environ.get(
+    "EMAIL_OTP_FALLBACK_ON_FAIL", ""
+).strip().lower() in ("1", "true", "yes")
 
 # Optional override (usually keep empty): if set, OTP is always sent to this E.164 number.
 # Leave empty to send OTP to the user's submitted phone number.
@@ -239,6 +243,8 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip() or BREVO_SMTP_LO
 EMAIL_HOST_PASSWORD = (
     os.environ.get("EMAIL_HOST_PASSWORD", "").strip() or BREVO_SMTP_KEY
 )
+# SMTP open/send timeout (seconds) — hung Brevo connections should not block the API for minutes.
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "25"))
 
 _default_from_env = os.environ.get("DEFAULT_FROM_EMAIL", "").strip()
 if _default_from_env:

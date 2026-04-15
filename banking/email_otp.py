@@ -188,8 +188,10 @@ def send_registration_email_otp(
         msg.send(fail_silently=False)
         logger.info("Registration email OTP sent to %s", to_email)
         return True, "email_sent", None
-    except Exception:
-        logger.exception("Registration email OTP failed for %s", to_email)
-        if getattr(settings, "DEBUG", False):
+    except Exception as exc:
+        logger.exception("Registration email OTP failed for %s: %s", to_email, exc)
+        # Do not pretend success + leak OTP when SMTP was configured but send failed (common misconfig).
+        _fb = getattr(settings, "EMAIL_OTP_FALLBACK_ON_FAIL", False)
+        if getattr(settings, "DEBUG", False) and _fb:
             return True, "email_demo", otp
         return False, "email_failed", None
