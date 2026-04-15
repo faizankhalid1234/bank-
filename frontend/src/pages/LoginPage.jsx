@@ -31,7 +31,8 @@ export function LoginPage() {
         <p className="auth-eyebrow">Welcome back</p>
         <h1 className="auth-title">Sign in</h1>
         <p className="auth-sub">
-          Enter your username <strong>or</strong> email (one is enough), then your password.
+          Username <strong>ya</strong> email — <strong>ek hi</strong> bharo (dono bharo to dono same account ke hon). Galat
+          autofill email khali karke dubara try karein agar password sahi ho ke bhi error aaye.
         </p>
         <form className="auth-form" onSubmit={onSubmit}>
           {error ? (

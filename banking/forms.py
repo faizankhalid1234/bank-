@@ -49,12 +49,28 @@ class AlyAuthForm(AuthenticationForm):
         if password is None or password == "":
             raise forms.ValidationError({"password": "Enter your password."})
 
-        # Prefer email, then username (case-insensitive). Avoids wrong-password __all__ when only casing differed.
-        user_obj = None
-        if email_raw:
-            user_obj = User.objects.filter(email__iexact=email_raw).first()
-        if user_obj is None and username_raw:
-            user_obj = User.objects.filter(username__iexact=username_raw).first()
+        # Prefer username, then email (case-insensitive). Email-first broke logins when the browser
+        # autofilled a different address but the user typed the correct username + password.
+        user_by_username = (
+            User.objects.filter(username__iexact=username_raw).first() if username_raw else None
+        )
+        user_by_email = User.objects.filter(email__iexact=email_raw).first() if email_raw else None
+
+        if (
+            username_raw
+            and email_raw
+            and user_by_username
+            and user_by_email
+            and user_by_username.pk != user_by_email.pk
+        ):
+            raise forms.ValidationError(
+                {
+                    "email": "Username and email belong to different accounts. "
+                    "Leave one field empty or use the pair for the same account."
+                }
+            )
+
+        user_obj = user_by_username or user_by_email
 
         if user_obj is None:
             if email_raw:

@@ -32,11 +32,19 @@ function errorMessageFromResponse(data) {
   if (typeof data.detail === "string" && data.detail) {
     const errs = data.errors;
     if (errs && typeof errs === "object" && !Array.isArray(errs)) {
-      const keys = Object.keys(errs);
-      for (const key of keys) {
+      const pick = (key) => {
         const v = errs[key];
         if (Array.isArray(v) && v.length && typeof v[0] === "string") return v[0];
         if (typeof v === "string") return v;
+        return null;
+      };
+      for (const key of ["password", "email", "username", "non_field_errors", "__all__"]) {
+        const m = pick(key);
+        if (m) return m;
+      }
+      for (const key of Object.keys(errs)) {
+        const m = pick(key);
+        if (m) return m;
       }
     }
     return data.detail;
