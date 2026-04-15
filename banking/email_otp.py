@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import html
 import logging
+import smtplib
+import socket
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -21,10 +23,47 @@ def transactional_from_email() -> str:
     """From header for OTP mail — never use *@smtp-brevo.com as visible sender."""
     from_email = (getattr(settings, "DEFAULT_FROM_EMAIL", None) or "").strip()
     if not from_email:
+        # Same as settings.DEFAULT_FROM_EMAIL logic, but read BREVO_SENDER_EMAIL again so
+        # OTP mail still works if only BREVO_SENDER_EMAIL is set in env (mis-sync edge cases).
+        brevo_sender = (getattr(settings, "BREVO_SENDER_EMAIL", None) or "").strip()
+        if brevo_sender:
+            from_email = (
+                f"AlyBank <{brevo_sender}>" if "<" not in brevo_sender else brevo_sender
+            )
+    if not from_email:
         u = (getattr(settings, "EMAIL_HOST_USER", None) or "").strip()
         if u and "@smtp-brevo.com" not in u.lower():
             from_email = f"AlyBank <{u}>" if "<" not in u else u
     return from_email
+
+
+def _smtp_failure_tag(exc: BaseException) -> str:
+    """Stable code for API hints (no raw exception text)."""
+    if isinstance(exc, smtplib.SMTPAuthenticationError):
+        return "smtp_auth"
+    if isinstance(exc, smtplib.SMTPRecipientsRefused):
+        return "recipient_refused"
+    if isinstance(exc, smtplib.SMTPServerDisconnected):
+        return "smtp_disconnected"
+    if isinstance(exc, smtplib.SMTPDataError):
+        return "smtp_data"
+    if isinstance(exc, smtplib.SMTPException):
+        msg = str(exc).lower()
+        if "timed out" in msg or "timeout" in msg:
+            return "timeout"
+        return "smtp_server"
+    if isinstance(exc, TimeoutError):
+        return "timeout"
+    if isinstance(exc, socket.timeout):
+        return "timeout"
+    if isinstance(exc, (BrokenPipeError, ConnectionResetError, ConnectionAbortedError)):
+        return "network"
+    if isinstance(exc, OSError):
+        msg = str(exc).lower()
+        if "timed out" in msg or "timeout" in msg:
+            return "timeout"
+        return "network"
+    return "unknown"
 
 
 def _otp_digits_row(otp: str) -> str:
@@ -150,22 +189,24 @@ def build_registration_otp_email(otp: str, to_email: str) -> tuple[str, str, str
 
 def send_registration_email_otp(
     to_email: str, otp: str
-) -> tuple[bool, str, str | None]:
+) -> tuple[bool, str, str | None, str | None]:
     """
-    Send HTML OTP email. Returns (success_flag, message_key, otp_for_json_or_none).
+    Send HTML OTP email.
 
+    Returns (success_flag, message_key, otp_for_json_or_none, error_code_or_none).
     message_key: 'email_sent' | 'email_failed' | 'email_demo' | 'email_not_configured'
+    error_code: stable hint when message_key == 'email_failed' (else None).
     """
     to_email = (to_email or "").strip()
     if not to_email:
-        return False, "email_failed", None
+        return False, "email_failed", None, "invalid_to"
 
     if not _smtp_credentials_set():
         if getattr(settings, "DEBUG", False):
             logger.info("Email SMTP not configured — demo OTP for %s", to_email)
-            return True, "email_demo", otp
+            return True, "email_demo", otp, None
         logger.warning("Email SMTP not configured — cannot send OTP to %s", to_email)
-        return False, "email_not_configured", None
+        return False, "email_not_configured", None, None
 
     subject, plain, html_body = build_registration_otp_email(otp, to_email)
     from_email = transactional_from_email()
@@ -174,7 +215,7 @@ def send_registration_email_otp(
             "Set BREVO_SENDER_EMAIL (verified Gmail) or DEFAULT_FROM_EMAIL in .env — "
             "SMTP login *@smtp-brevo.com cannot be the From address for inbox delivery."
         )
-        return False, "email_failed", None
+        return False, "email_failed", None, "from_header_missing"
 
     msg = EmailMultiAlternatives(
         subject=subject,
@@ -187,11 +228,11 @@ def send_registration_email_otp(
     try:
         msg.send(fail_silently=False)
         logger.info("Registration email OTP sent to %s", to_email)
-        return True, "email_sent", None
+        return True, "email_sent", None, None
     except Exception as exc:
         logger.exception("Registration email OTP failed for %s: %s", to_email, exc)
         # Do not pretend success + leak OTP when SMTP was configured but send failed (common misconfig).
         _fb = getattr(settings, "EMAIL_OTP_FALLBACK_ON_FAIL", False)
         if getattr(settings, "DEBUG", False) and _fb:
-            return True, "email_demo", otp
-        return False, "email_failed", None
+            return True, "email_demo", otp, None
+        return False, "email_failed", None, _smtp_failure_tag(exc)

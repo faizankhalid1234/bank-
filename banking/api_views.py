@@ -4,6 +4,7 @@ import logging
 import secrets
 from datetime import timedelta
 
+from django.conf import settings as django_settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
@@ -81,6 +82,52 @@ def _registration_email_otp_message(email_key: str, email_addr: str) -> str:
     if email_key == "email_not_configured":
         return "Email SMTP configure nahi (.env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY). Abhi sirf SMS code se aage badh sakte ho nahi — dono chahiye."
     return "Email par code nahi bheja ja saka. .env / Brevo SMTP check karein."
+
+
+def _registration_email_fail_detail(code: str | None) -> str:
+    """User-facing hint for email_failed (matches send_registration_email_otp error_code)."""
+    c = (code or "unknown").strip()
+    hints = {
+        "from_header_missing": (
+            "Server par 'From' email set nahi — Railway Variables mein BREVO_SENDER_EMAIL add karein "
+            "(Brevo → Senders & IP → verified address, Gmail waghera). "
+            "Agar SMTP login *@smtp-brevo.com hai to yeh field zaroori hai. "
+            "Ya DEFAULT_FROM_EMAIL=AlyBank <verified@domain.com> set karein."
+        ),
+        "invalid_to": "Form mein valid email address likhein.",
+        "smtp_auth": (
+            "Brevo SMTP login/password galat — BREVO_SMTP_KEY (xsmtpsib-...) aur BREVO_SMTP_LOGIN "
+            "(Brevo account email, kabhi-kabhi SMTP page par likha) dubara copy karein; space/quote na hon."
+        ),
+        "recipient_refused": (
+            "SMTP ne recipient reject kiya — form wala email format / domain check karein; "
+            "Brevo blocked-recipients list bhi dekhein."
+        ),
+        "smtp_disconnected": (
+            "SMTP connection turant band — EMAIL_HOST/PORT (587+TLS ya 465+SSL), firewall, ya "
+            "EMAIL_USE_SSL=1 + EMAIL_PORT=465 try karein agar 587 block ho."
+        ),
+        "smtp_data": (
+            "Mail content / sender policy se reject — Brevo dashboard mein sender verify karein; "
+            "From = verified sender hona chahiye."
+        ),
+        "smtp_server": (
+            "Brevo server ne mail reject ki — Brevo Transactional logs / SMTP error code match karein; "
+            "daily quota ya domain verification dekhein."
+        ),
+        "timeout": (
+            "SMTP timeout — EMAIL_TIMEOUT barhao ya network check karein; Brevo smtp-relay.brevo.com reachable hai?"
+        ),
+        "network": (
+            "Network / TLS issue — Railway se outbound 587 (ya 465) allow hai verify karein; "
+            "EMAIL_USE_TLS / EMAIL_USE_SSL + PORT match karein."
+        ),
+        "unknown": (
+            "SMTP error — server logs (Registration email OTP failed) mein exact exception dekhein; "
+            "BREVO_SMTP_LOGIN, BREVO_SMTP_KEY, BREVO_SENDER_EMAIL, EMAIL_HOST=smtp-relay.brevo.com verify karein."
+        ),
+    }
+    return hints.get(c, hints["unknown"])
 
 
 def _auth_token_for(user: User) -> str:
@@ -211,8 +258,8 @@ class RegisterRequestView(APIView):
                 fut_email = pool.submit(_email_job)
                 fut_sms = pool.submit(_sms_job)
                 try:
-                    _, email_key, email_otp_for_client = fut_email.result(
-                        timeout=_send_timeout
+                    _, email_key, email_otp_for_client, email_fail_code = (
+                        fut_email.result(timeout=_send_timeout)
                     )
                 except concurrent.futures.TimeoutError:
                     return Response(
@@ -241,13 +288,18 @@ class RegisterRequestView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         if email_key == "email_failed":
-            return Response(
-                {
-                    "detail": "Email OTP nahi gaya. Brevo Senders + SMTP (.env) check karein; recipient form wala email hota hai.",
-                    "errors": {"email": ["Email delivery failed."]},
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            detail = _registration_email_fail_detail(email_fail_code)
+            body: dict = {
+                "detail": detail,
+                "errors": {"email": ["Email delivery failed."]},
+                "email_error": email_fail_code or "unknown",
+            }
+            if getattr(django_settings, "DEBUG", False):
+                body["debug"] = (
+                    "Django DEBUG=1 — agar OTP sirf test ke liye chahiye: EMAIL_OTP_FALLBACK_ON_FAIL=1 "
+                    "(production par band rakhein)."
+                )
+            return Response(body, status=status.HTTP_400_BAD_REQUEST)
         if email_key == "email_not_configured":
             return Response(
                 {

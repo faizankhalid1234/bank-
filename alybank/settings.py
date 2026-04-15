@@ -239,6 +239,12 @@ BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "").strip()
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp-relay.brevo.com").strip()
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1").lower() not in ("0", "false", "no")
+# Port 465: set EMAIL_USE_SSL=1 and usually EMAIL_USE_TLS=0 (Brevo supports both 587+TLS and 465+SSL).
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip() or BREVO_SMTP_LOGIN
 EMAIL_HOST_PASSWORD = (
     os.environ.get("EMAIL_HOST_PASSWORD", "").strip() or BREVO_SMTP_KEY
