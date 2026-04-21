@@ -1,4 +1,3 @@
-import concurrent.futures
 import hashlib
 import logging
 import secrets
@@ -24,7 +23,6 @@ from .models import BankAccount, PendingSignup, Transaction, UserProfile
 from .phone_utils import mask_phone, normalize_phone
 from .services import ensure_bank_account, find_recipient, transfer
 from .email_otp import send_registration_email_otp
-from .sms import send_registration_otp
 
 logger = logging.getLogger(__name__)
 
@@ -37,34 +35,6 @@ def _user_payload(user: User) -> dict:
         "email": user.email or "",
         "phone": prof.phone if prof else "",
     }
-
-
-def _registration_otp_message(sms_key: str, masked: str) -> str:
-    if sms_key == "sms_sent":
-        return f"Hum ne {masked} par 6 digit code bheja hai. Neeche likh dein."
-    if sms_key == "sms_demo":
-        return (
-            "Local demo: Twilio SMS .env mein set nahi / SMS_OTP_FALLBACK_ON_TWILIO_FAIL=1 debug. "
-            "Neeche wala code copy karke paste karein. Production SMS ke liye Twilio keys + paid/trial verified number zaroori."
-        )
-    if sms_key == "sms_dev_console":
-        return "SMS service configure nahi. OTP sirf server log/terminal par hai — administrator se rabta karein."
-    if sms_key == "sms_trial_unverified":
-        return (
-            "Twilio ne SMS reject ki (trial / verified number / permission). "
-            "Console → Verified Caller IDs par yeh number verify karein, ya paid account, ya TWILIO_MESSAGING_SERVICE_SID use karein."
-        )
-    if sms_key == "sms_quota_exceeded":
-        return (
-            "Twilio daily SMS limit khatam (error 63038). Kal dubara try karein ya Twilio Console → Billing/Support se limit barhao. "
-            "OTP user ke diye hue mobile number par hi jati hai — number galat nahi; account quota block kar raha hai."
-        )
-    if sms_key == "sms_failed":
-        return (
-            "SMS Twilio se nahi gayi (keys, From / Messaging Service, ya carrier). "
-            "Server logs / sms_twilio_code dekhein, Twilio Debugger mein error match karein."
-        )
-    return "SMS nahi ja saki. Thori der baad dubara try karein ya Twilio keys check karein."
 
 
 def _registration_email_otp_message(email_key: str, email_addr: str) -> str:
@@ -80,7 +50,7 @@ def _registration_email_otp_message(email_key: str, email_addr: str) -> str:
             "Asli inbox ke liye Railway .env par Brevo SMTP + BREVO_SENDER_EMAIL set karein; production par DEBUG=0."
         )
     if email_key == "email_not_configured":
-        return "Email SMTP configure nahi (.env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY). Abhi sirf SMS code se aage badh sakte ho nahi — dono chahiye."
+        return "Email SMTP configure nahi (.env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY). OTP email ke baghair signup mukammal nahi ho sakta."
     return "Email par code nahi bheja ja saka. .env / Brevo SMTP check karein."
 
 
@@ -198,6 +168,51 @@ class LoginView(APIView):
         )
 
 
+class DemoLoginView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        demo_username = "faizan"
+        demo_email = "faizandemo@yopmail.com"
+        demo_phone = "+923000000000"
+        demo_password = "Demo@12345"
+
+        user, created = User.objects.get_or_create(
+            username=demo_username,
+            defaults={"email": demo_email, "first_name": "Faizan"},
+        )
+        if not created:
+            changed = False
+            if (user.email or "").strip().lower() != demo_email:
+                user.email = demo_email
+                changed = True
+            if (user.first_name or "").strip() != "Faizan":
+                user.first_name = "Faizan"
+                changed = True
+            if changed:
+                user.save(update_fields=["email", "first_name"])
+
+        if not user.has_usable_password() or not user.check_password(demo_password):
+            user.set_password(demo_password)
+            user.save(update_fields=["password"])
+
+        UserProfile.objects.update_or_create(
+            user=user,
+            defaults={"phone": demo_phone},
+        )
+        account = ensure_bank_account(user)
+        login(request, user)
+        return Response(
+            {
+                "token": _auth_token_for(user),
+                "user": _user_payload(user),
+                "account": _account_payload(account),
+                "message": "Demo account ready.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -208,7 +223,7 @@ class LogoutView(APIView):
 
 
 class RegisterRequestView(APIView):
-    """Validate details; send email OTP (Brevo SMTP) + SMS OTP; then save pending signup."""
+    """Validate details; send email OTP (Brevo SMTP); then save pending signup (phone stored, no SMS)."""
 
     permission_classes = [permissions.AllowAny]
 
@@ -239,52 +254,16 @@ class RegisterRequestView(APIView):
         PendingSignup.objects.filter(username=username).delete()
         PendingSignup.objects.filter(email__iexact=email).delete()
         pwd_hash = make_password(cleaned["password1"])
-        sms_otp = _generate_otp()
         email_otp = _generate_otp()
-        while email_otp == sms_otp:
-            email_otp = _generate_otp()
-
-        # Email + SMS in parallel — register request latency ≈ max(email, sms), not sum.
-        _send_timeout = 45
-
-        def _email_job():
-            return send_registration_email_otp(email, email_otp)
-
-        def _sms_job():
-            return send_registration_otp(phone, sms_otp)
 
         try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-                fut_email = pool.submit(_email_job)
-                fut_sms = pool.submit(_sms_job)
-                try:
-                    _, email_key, email_otp_for_client, email_fail_code = (
-                        fut_email.result(timeout=_send_timeout)
-                    )
-                except concurrent.futures.TimeoutError:
-                    return Response(
-                        {
-                            "detail": "Email SMTP timeout — Brevo slow ya blocked. EMAIL_TIMEOUT / network check karein.",
-                            "errors": {"email": ["Email send timed out."]},
-                        },
-                        status=status.HTTP_504_GATEWAY_TIMEOUT,
-                    )
-                try:
-                    _, sms_key, otp_for_client, sms_twilio_code = fut_sms.result(
-                        timeout=_send_timeout
-                    )
-                except concurrent.futures.TimeoutError:
-                    return Response(
-                        {
-                            "detail": "SMS (Twilio) timeout — network ya Twilio check karein.",
-                            "errors": {"phone": ["SMS send timed out."]},
-                        },
-                        status=status.HTTP_504_GATEWAY_TIMEOUT,
-                    )
+            _, email_key, email_otp_for_client, email_fail_code = (
+                send_registration_email_otp(email, email_otp)
+            )
         except Exception:
-            logger.exception("register/request parallel send failed")
+            logger.exception("register/request email send failed")
             return Response(
-                {"detail": "Verification codes could not be sent. Try again shortly."},
+                {"detail": "Verification email could not be sent. Try again shortly."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         if email_key == "email_failed":
@@ -314,7 +293,6 @@ class RegisterRequestView(APIView):
             email=email,
             phone_number=phone,
             password_hash=pwd_hash,
-            otp_hash=_hash_otp(sms_otp),
             email_otp_hash=_hash_otp(email_otp),
             expires_at=timezone.now() + timedelta(minutes=10),
         )
@@ -322,23 +300,11 @@ class RegisterRequestView(APIView):
             "pending_id": str(pending.id),
             "expires_in": 600,
             "phone_masked": masked,
-            "sms_to_fixed_verified": False,
-            "sms_sent": sms_key == "sms_sent",
-            "sms_demo": sms_key == "sms_demo",
-            "sms_dev_console": sms_key == "sms_dev_console",
-            "sms_failed": sms_key == "sms_failed",
-            "sms_quota_exceeded": sms_key == "sms_quota_exceeded",
-            "sms_trial_unverified": sms_key == "sms_trial_unverified",
-            "message": _registration_otp_message(sms_key, masked),
             "email_sent": email_key == "email_sent",
             "email_demo": email_key == "email_demo",
             "email_message": _registration_email_otp_message(email_key, email),
             "email_otp_sent_to": email,
         }
-        if sms_twilio_code is not None:
-            payload["sms_twilio_code"] = sms_twilio_code
-        if otp_for_client is not None:
-            payload["otp"] = otp_for_client
         if email_otp_for_client is not None:
             payload["email_otp"] = email_otp_for_client
         return Response(payload, status=status.HTTP_200_OK)
@@ -346,7 +312,7 @@ class RegisterRequestView(APIView):
 
 class RegisterConfirmView(APIView):
     """
-    Creates the User only after both codes match: SMS (otp) and email (email_otp).
+    Creates the User only after email OTP matches.
     No account exists in the database until this succeeds.
     """
 
@@ -354,11 +320,10 @@ class RegisterConfirmView(APIView):
 
     def post(self, request):
         pending_id = request.data.get("pending_id")
-        otp_raw = (request.data.get("otp") or "").strip().replace(" ", "")
         email_otp_raw = (request.data.get("email_otp") or "").strip().replace(" ", "")
-        if not pending_id or not otp_raw or not email_otp_raw:
+        if not pending_id or not email_otp_raw:
             return Response(
-                {"detail": "pending_id, otp (SMS), and email_otp are required."},
+                {"detail": "pending_id and email_otp are required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:
@@ -372,11 +337,6 @@ class RegisterConfirmView(APIView):
             pending.delete()
             return Response(
                 {"detail": "Verification code expired. Start registration again."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if _hash_otp(otp_raw) != pending.otp_hash:
-            return Response(
-                {"detail": "Wrong SMS verification code. Try again."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if (

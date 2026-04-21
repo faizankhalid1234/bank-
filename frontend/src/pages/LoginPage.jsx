@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth.jsx";
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, demoLogin } = useAuth();
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -19,6 +19,19 @@ export function LoginPage() {
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Sign in failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDemoLogin() {
+    setError("");
+    setBusy(true);
+    try {
+      await demoLogin();
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err.message || "Demo sign in failed.");
     } finally {
       setBusy(false);
     }
@@ -64,6 +77,14 @@ export function LoginPage() {
           </label>
           <button className="btn btn--primary btn--block" type="submit" disabled={busy}>
             {busy ? "Signing in…" : "Sign in"}
+          </button>
+          <button
+            className="btn btn--ghost btn--block"
+            type="button"
+            onClick={onDemoLogin}
+            disabled={busy}
+          >
+            {busy ? "Preparing demo…" : "Use Demo Account"}
           </button>
         </form>
         <p className="auth-foot">

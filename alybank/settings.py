@@ -206,29 +206,10 @@ LOGIN_REDIRECT_URL = "banking:dashboard"
 LOGOUT_REDIRECT_URL = "banking:login"
 LOGIN_URL = "banking:login"
 
-# Optional: real SMS OTP via Twilio (https://www.twilio.com/). If unset, OTP is only logged on the server.
-# Account SID always starts with AC... (Console dashboard). API Key SID starts with SK... (optional auth method).
-TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
-TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
-TWILIO_API_KEY_SID = os.environ.get("TWILIO_API_KEY_SID", "").strip()
-TWILIO_API_KEY_SECRET = os.environ.get("TWILIO_API_KEY_SECRET", "").strip()
-TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
-# Optional: use a Messaging Service instead of From (set either this or TWILIO_FROM_NUMBER).
-TWILIO_MESSAGING_SERVICE_SID = os.environ.get(
-    "TWILIO_MESSAGING_SERVICE_SID", ""
-).strip()
-# Local only: if 1 and DEBUG, Twilio SMS fail hone par bhi JSON mein OTP (trial debug).
-SMS_OTP_FALLBACK_ON_TWILIO_FAIL = os.environ.get(
-    "SMS_OTP_FALLBACK_ON_TWILIO_FAIL", ""
-).strip().lower() in ("1", "true", "yes")
 # Local only: if 1 and DEBUG, SMTP email fail par JSON mein email OTP (debug). Production par 0 rakhein.
 EMAIL_OTP_FALLBACK_ON_FAIL = os.environ.get(
     "EMAIL_OTP_FALLBACK_ON_FAIL", ""
 ).strip().lower() in ("1", "true", "yes")
-
-# Optional override (usually keep empty): if set, OTP is always sent to this E.164 number.
-# Leave empty to send OTP to the user's submitted phone number.
-OTP_FIXED_PHONE_E164 = (os.environ.get("OTP_FIXED_PHONE_E164") or "").strip()
 
 # --- Email (Brevo SMTP or any provider) — registration email OTP ---
 # Brevo: https://app.brevo.com/settings/keys/smtp — Login = your Brevo account email, Password = xsmtpsib-... key

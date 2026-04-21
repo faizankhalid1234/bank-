@@ -44,16 +44,23 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  const demoLogin = useCallback(async () => {
+    await ensureCsrf();
+    const data = await api.post("/auth/demo-login/", {});
+    if (data.token) setAuthToken(data.token);
+    setMe({ user: data.user, account: data.account });
+    return data;
+  }, []);
+
   const registerRequest = useCallback(async (payload) => {
     await ensureCsrf();
     return api.post("/auth/register/request/", payload);
   }, []);
 
-  const registerConfirm = useCallback(async ({ pendingId, otp, emailOtp }) => {
+  const registerConfirm = useCallback(async ({ pendingId, emailOtp }) => {
     await ensureCsrf();
     const data = await api.post("/auth/register/confirm/", {
       pending_id: pendingId,
-      otp,
       email_otp: emailOtp,
     });
     if (data.token) setAuthToken(data.token);
@@ -80,11 +87,12 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(me?.user),
       refreshMe,
       login,
+      demoLogin,
       registerRequest,
       registerConfirm,
       logout,
     }),
-    [me, loading, refreshMe, login, registerRequest, registerConfirm, logout]
+    [me, loading, refreshMe, login, demoLogin, registerRequest, registerConfirm, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

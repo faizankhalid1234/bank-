@@ -130,7 +130,7 @@ class PendingSignupAdmin(admin.ModelAdmin):
         "email",
         "phone_number",
         "password_hash",
-        "otp_hash",
+        "email_otp_hash",
         "expires_at",
         "created_at",
     )

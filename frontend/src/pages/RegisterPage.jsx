@@ -28,20 +28,9 @@ export function RegisterPage() {
   const [verifyHint, setVerifyHint] = useState("");
   const [emailOtpDestination, setEmailOtpDestination] = useState("");
   const [phoneMasked, setPhoneMasked] = useState("");
-  /** Only when API explicitly in demo mode — not when real SMS/email sent */
-  const [demoSmsOtp, setDemoSmsOtp] = useState("");
   const [demoEmailOtp, setDemoEmailOtp] = useState("");
-  const [delivery, setDelivery] = useState({
-    smsSent: false,
-    emailSent: false,
-    smsDemo: false,
-    emailDemo: false,
-    smsFailed: false,
-    smsQuotaExceeded: false,
-    smsTrialUnverified: false,
-    smsToFixedVerified: false,
-  });
-  const [otpInput, setOtpInput] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailDemo, setEmailDemo] = useState(false);
   const [emailOtpInput, setEmailOtpInput] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -52,19 +41,9 @@ export function RegisterPage() {
     setVerifyHint("");
     setEmailOtpDestination("");
     setPhoneMasked("");
-    setDemoSmsOtp("");
     setDemoEmailOtp("");
-    setDelivery({
-      smsSent: false,
-      emailSent: false,
-      smsDemo: false,
-      emailDemo: false,
-      smsFailed: false,
-      smsQuotaExceeded: false,
-      smsTrialUnverified: false,
-      smsToFixedVerified: false,
-    });
-    setOtpInput("");
+    setEmailSent(false);
+    setEmailDemo(false);
     setEmailOtpInput("");
     setError("");
   }
@@ -77,33 +56,22 @@ export function RegisterPage() {
       const data = await registerRequest({ username, email, phone, password1, password2 });
       setPendingId(data.pending_id);
       setPhoneMasked(typeof data.phone_masked === "string" ? data.phone_masked : "");
-      setVerifyHint([data.message, data.email_message].filter(Boolean).join(" ") || "");
+      setVerifyHint(
+        typeof data.email_message === "string" && data.email_message.trim()
+          ? data.email_message.trim()
+          : ""
+      );
       setEmailOtpDestination(
         typeof data.email_otp_sent_to === "string" && data.email_otp_sent_to
           ? data.email_otp_sent_to
           : (email || "").trim()
       );
 
-      const smsDemo = !!data.sms_demo;
-      const emailDemo = !!data.email_demo;
-      const otpStr = data.otp != null ? String(data.otp) : "";
+      setEmailSent(!!data.email_sent);
+      setEmailDemo(!!data.email_demo);
       const emailOtpStr = data.email_otp != null ? String(data.email_otp) : "";
-
-      setDemoSmsOtp(smsDemo && otpStr.length === 6 ? otpStr : "");
       setDemoEmailOtp(emailDemo && emailOtpStr.length === 6 ? emailOtpStr : "");
 
-      setDelivery({
-        smsSent: !!data.sms_sent,
-        emailSent: !!data.email_sent,
-        smsDemo,
-        emailDemo,
-        smsFailed: !!data.sms_failed,
-        smsQuotaExceeded: !!data.sms_quota_exceeded,
-        smsTrialUnverified: !!data.sms_trial_unverified,
-        smsToFixedVerified: !!data.sms_to_fixed_verified,
-      });
-
-      setOtpInput("");
       setEmailOtpInput("");
       setPhase("verify");
     } catch (err) {
@@ -118,7 +86,7 @@ export function RegisterPage() {
     setError("");
     setBusy(true);
     try {
-      await registerConfirm({ pendingId, otp: otpInput, emailOtp: emailOtpInput });
+      await registerConfirm({ pendingId, emailOtp: emailOtpInput });
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Verification failed.");
@@ -127,8 +95,7 @@ export function RegisterPage() {
     }
   }
 
-  const bothReal = delivery.smsSent && delivery.emailSent;
-  const showDemoPanel = phase === "verify" && (demoSmsOtp || demoEmailOtp);
+  const showDemoEmailStrip = phase === "verify" && demoEmailOtp;
 
   return (
     <div className="register-page-wrap">
@@ -138,70 +105,44 @@ export function RegisterPage() {
           <h1 className="auth-title">Open your AlyBank account</h1>
           <p className="auth-sub">
             {phase === "details"
-              ? "Apna mobile aur woh email likho jahan OTP lena hai — SMS aur email dono alag codes par jate hain."
-              : bothReal
-                ? "Dono codes bhej diye: SMS mobile par, email OTP usi email ke inbox mein (Spam/Promotions bhi dekhein)."
-                : showDemoPanel
-                  ? "Neeche demo codes sirf tab dikhte hain jab server SMS/email demo mode mein ho — production mein yeh boxes nahi aate."
-                  : delivery.smsQuotaExceeded && delivery.emailSent
-                    ? "Email OTP inbox mein hai. SMS Twilio account ki daily limit (63038) ki wajah se nahi gaya — neeche detail padhein; SMS ke liye kal retry ya Twilio par limit barhao."
-                    : "Jo code SMS par aaya ho aur jo email par, dono yahan likhein."}
+              ? "Mobile number profile ke liye — verification code sirf email par jayega."
+              : emailSent
+                ? `6 digit code ${emailOtpDestination ? `${emailOtpDestination} ke inbox` : "aapki email"} mein bheja gaya (Spam / Promotions bhi dekhein).`
+                : showDemoEmailStrip
+                  ? "Neeche demo email code sirf tab dikhta hai jab server DEBUG + email demo mode mein ho."
+                  : verifyHint || "Email OTP inbox check karein."}
           </p>
 
-          {phase === "verify" && bothReal ? (
+          {phase === "verify" && emailSent ? (
             <div className="alert alert--ok" role="status" style={{ marginBottom: "1rem" }}>
-              <strong>Codes bhej diye gaye.</strong>{" "}
-              {delivery.smsToFixedVerified
-                ? `SMS Twilio verified number par gaya${phoneMasked ? ` (${phoneMasked})` : ""} — wahi inbox check karein. Email OTP: ${emailOtpDestination || "neeche diya gaya inbox"}.`
-                : `SMS aapke mobile par aur email OTP ${emailOtpDestination ? `${emailOtpDestination} ke inbox` : "usi email ke inbox"} mein aana chahiye — thori der wait karke dono check karein (Spam / Promotions).`}
+              <strong>Email bhej di gayi.</strong>{" "}
+              {phoneMasked
+                ? `Mobile profile ke liye save: ${phoneMasked}.`
+                : "Mobile profile ke liye save ho jayega."}
             </div>
           ) : null}
 
-          {phase === "verify" && !bothReal && verifyHint ? (
+          {phase === "verify" && !emailSent && verifyHint ? (
             <div className="alert alert--info" role="status">
               {verifyHint}
             </div>
           ) : null}
 
-          {showDemoPanel ? (
+          {showDemoEmailStrip ? (
             <div className="otp-strip-outer" style={{ marginBottom: "1rem" }}>
-              {demoSmsOtp ? (
-                <div className="otp-strip otp-strip--demo" role="status" aria-live="polite">
-                  <p className="otp-strip-label">SMS (demo / fallback only)</p>
-                  <div className="otp-strip-digits" aria-label="SMS demo code">
-                    {demoSmsOtp.split("").map((ch, i) => (
-                      <span key={i} className="otp-digit">
-                        {ch}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="otp-strip-note">
-                    Production mein Twilio keys + account limits theek hon to SMS user ke diye hue
-                    number par jayega.
-                  </p>
+              <div className="otp-strip otp-strip--demo" role="status" aria-live="polite">
+                <p className="otp-strip-label">Email (demo / fallback only)</p>
+                <div className="otp-strip-digits" aria-label="Email demo code">
+                  {demoEmailOtp.split("").map((ch, i) => (
+                    <span key={i} className="otp-digit">
+                      {ch}
+                    </span>
+                  ))}
                 </div>
-              ) : null}
-              {demoEmailOtp ? (
-                <div
-                  className="otp-strip otp-strip--demo"
-                  style={{ marginTop: demoSmsOtp ? "0.75rem" : 0 }}
-                  role="status"
-                  aria-live="polite"
-                >
-                  <p className="otp-strip-label">Email (demo / fallback only)</p>
-                  <div className="otp-strip-digits" aria-label="Email demo code">
-                    {demoEmailOtp.split("").map((ch, i) => (
-                      <span key={i} className="otp-digit">
-                        {ch}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="otp-strip-note">
-                    Asli inbox ke liye .env mein BREVO_SMTP_LOGIN + BREVO_SMTP_KEY + Brevo par
-                    verified sender (From).
-                  </p>
-                </div>
-              ) : null}
+                <p className="otp-strip-note">
+                  Production inbox ke liye BREVO_SMTP_LOGIN + BREVO_SMTP_KEY + verified sender set karein.
+                </p>
+              </div>
             </div>
           ) : null}
 
@@ -235,7 +176,7 @@ export function RegisterPage() {
                 />
               </label>
               <label className="field">
-                <span>Mobile number (SMS OTP is par)</span>
+                <span>Mobile number (profile)</span>
                 <input
                   className="input"
                   type="tel"
@@ -249,8 +190,7 @@ export function RegisterPage() {
                   className="field-hint"
                   style={{ fontSize: "0.85rem", color: "var(--muted, #64748b)" }}
                 >
-                  Jo number yahan likho ge, Twilio SMS OTP usi par bhejega (Twilio account limits
-                  apply).
+                  Yeh number aapke account profile mein save hoga; SMS OTP nahi bheja jata.
                 </span>
               </label>
               <label className="field">
@@ -276,7 +216,7 @@ export function RegisterPage() {
                 />
               </label>
               <button className="btn btn--primary btn--block" type="submit" disabled={busy}>
-                {busy ? "Sending codes…" : "Continue — get verification codes"}
+                {busy ? "Sending email…" : "Continue — email OTP bhejain"}
               </button>
             </form>
           ) : (
@@ -287,21 +227,8 @@ export function RegisterPage() {
                 </div>
               ) : null}
               <label className="field">
-                <span>SMS code (mobile par jo aaya)</span>
-                <input
-                  className="input otp-input"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={8}
-                  placeholder="000000"
-                  value={otpInput}
-                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  required
-                />
-              </label>
-              <label className="field">
                 <span>
-                  Email code
+                  Email verification code
                   {emailOtpDestination ? ` (${emailOtpDestination})` : ""}
                 </span>
                 <input

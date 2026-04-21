@@ -6,6 +6,7 @@ urlpatterns = [
     path("csrf/", api_views.CsrfView.as_view()),
     path("branding/", api_views.BrandingView.as_view()),
     path("auth/login/", api_views.LoginView.as_view()),
+    path("auth/demo-login/", api_views.DemoLoginView.as_view()),
     path("auth/logout/", api_views.LogoutView.as_view()),
     path("auth/register/request/", api_views.RegisterRequestView.as_view()),
     path("auth/register/confirm/", api_views.RegisterConfirmView.as_view()),
