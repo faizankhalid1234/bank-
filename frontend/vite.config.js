@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
@@ -5,10 +7,24 @@ import { VitePWA } from "vite-plugin-pwa";
 /** Default Railway backend (override with frontend/.env → VITE_DJANGO_URL). */
 const DEFAULT_DJANGO_URL = "https://web-production-9e2ed.up.railway.app";
 
+function useDjangoStaticLayout(env) {
+  if (env.VITE_DEPLOY_TARGET === "django") return true;
+  if (env.VITE_DEPLOY_TARGET === "standalone") return false;
+  const sibling = path.join(process.cwd(), "..", "backend");
+  try {
+    return fs.existsSync(sibling) && fs.statSync(sibling).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const django = (env.VITE_DJANGO_URL || DEFAULT_DJANGO_URL).replace(/\/$/, "");
-  const base = mode === "production" ? "/static/spa/" : "/";
+  const djangoStatic = useDjangoStaticLayout(env);
+  const base =
+    mode === "production" ? (djangoStatic ? "/static/spa/" : "/") : "/";
+  const outDir = djangoStatic ? "../backend/static/spa" : "dist";
 
   return {
     define: {
@@ -61,7 +77,7 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     build: {
-      outDir: "../backend/static/spa",
+      outDir,
       emptyOutDir: true,
     },
     server: {

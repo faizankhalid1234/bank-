@@ -12,3 +12,4 @@ frontend/.env
 frontend/node_modules/
 # Vite build output (Dockerfile runs npm run build — no need to commit)
 backend/static/spa/
+frontend/dist/
