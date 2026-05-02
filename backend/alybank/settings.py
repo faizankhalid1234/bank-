@@ -25,7 +25,7 @@ else:
 
 # Production app URL (Railway). Override with PUBLIC_APP_URL=https://your-host.up.railway.app
 _railway_public_domain = (os.environ.get("RAILWAY_PUBLIC_DOMAIN") or "").strip()
-_default_railway_host = "bank-production-f72a.up.railway.app"
+_default_railway_host = "web-production-9e2ed.up.railway.app"
 _public_app_url = (os.environ.get("PUBLIC_APP_URL") or "").strip().rstrip("/")
 if not _public_app_url:
     _host_for_origin = _railway_public_domain or _default_railway_host

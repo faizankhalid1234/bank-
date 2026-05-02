@@ -1,5 +1,12 @@
 const API_PREFIX = "/api";
 
+/** Set VITE_DJANGO_URL at build time (e.g. Railway backend) so API calls work from any frontend host. */
+const API_ORIGIN = (
+  typeof import.meta.env.VITE_DJANGO_URL === "string"
+    ? import.meta.env.VITE_DJANGO_URL.trim().replace(/\/$/, "")
+    : ""
+);
+
 const TOKEN_KEY = "alybank_auth_token";
 
 let csrfToken = null;
@@ -64,10 +71,10 @@ function errorMessageFromResponse(data) {
 export async function ensureCsrf() {
   let r;
   try {
-    r = await fetch(`${API_PREFIX}/csrf/`, { credentials: "include" });
+    r = await fetch(`${API_ORIGIN}${API_PREFIX}/csrf/`, { credentials: "include" });
   } catch {
     throw new Error(
-      "Server tak pohnch nahi saka. Django chal raha hai? Terminal mein: python manage.py runserver (port 8000), phir frontend npm run dev."
+      "Server tak pohnch nahi saka — backend (Railway) reachable hai? VITE_DJANGO_URL check karein; local Django ke liye .env mein http://127.0.0.1:8000 set karein."
     );
   }
   const text = await r.text();
@@ -82,7 +89,7 @@ export async function ensureCsrf() {
   }
   if (!j || typeof j.csrfToken !== "string") {
     throw new Error(
-      "CSRF token nahi mila — API ne JSON nahi bheja (khali jawab). Django runserver port 8000 check karein; Vite proxy /api → 127.0.0.1:8000 hona chahiye."
+      "CSRF token nahi mila — API ne JSON nahi bheja. Backend URL / CORS / cookies check karein (VITE_DJANGO_URL)."
     );
   }
   csrfToken = j.csrfToken;
@@ -102,14 +109,14 @@ async function apiFetch(path, options = {}) {
   }
   let r;
   try {
-    r = await fetch(`${API_PREFIX}${path}`, {
+    r = await fetch(`${API_ORIGIN}${API_PREFIX}${path}`, {
       ...options,
       credentials: "include",
       headers,
     });
   } catch {
     throw new Error(
-      "Network error — Django backend nahi mil raha. Pehle `python manage.py runserver` chalayein (8000), phir register/login try karein."
+      "Network error — API backend nahi mil raha. VITE_DJANGO_URL (Railway) sahi hai? Alag frontend domain par CORS backend par set karein."
     );
   }
   const text = await r.text();
