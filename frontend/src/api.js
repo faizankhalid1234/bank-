@@ -1,11 +1,13 @@
 const API_PREFIX = "/api";
 
-/** Set VITE_DJANGO_URL at build time (e.g. Railway backend) so API calls work from any frontend host. */
-const API_ORIGIN = (
+/** Must match backend deploy; used if env missing (Vercel build must still hit Railway, not relative /api). */
+const DEFAULT_RAILWAY_API = "https://web-production-77db8.up.railway.app";
+
+const _fromEnv =
   typeof import.meta.env.VITE_DJANGO_URL === "string"
     ? import.meta.env.VITE_DJANGO_URL.trim().replace(/\/$/, "")
-    : ""
-);
+    : "";
+const API_ORIGIN = _fromEnv || DEFAULT_RAILWAY_API;
 
 const TOKEN_KEY = "alybank_auth_token";
 
