@@ -6,6 +6,8 @@ from django.contrib import admin
 from django.http import FileResponse, HttpResponse
 from django.urls import include, path, re_path
 
+from . import seo_views
+
 
 def healthz(_request):
     return HttpResponse("ok", content_type="text/plain; charset=utf-8")
@@ -25,6 +27,8 @@ def spa_index(request):
 
 urlpatterns = [
     path("healthz", healthz),
+    path("robots.txt", seo_views.robots_txt),
+    path("sitemap.xml", seo_views.sitemap_xml),
     path("admin/", admin.site.urls),
     path("api/", include("banking.api_urls")),
 ]

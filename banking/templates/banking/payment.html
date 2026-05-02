@@ -1,5 +1,11 @@
 {% extends "banking/base.html" %}
 {% block title %}Send payment · {{ BANK_NAME }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block meta_description %}Send a demo payment from {{ BANK_NAME }} by account number or IBAN.{% endblock %}
+{% block og_description %}Send a demo payment from {{ BANK_NAME }} by account number or IBAN.{% endblock %}
+{% block twitter_description %}Send a demo payment from {{ BANK_NAME }} by account number or IBAN.{% endblock %}
+{% block og_title %}Send payment · {{ BANK_NAME }}{% endblock %}
+{% block twitter_title %}Send payment · {{ BANK_NAME }}{% endblock %}
 {% block content %}
 <section class="card" style="max-width:560px;margin-inline:auto">
   <h1>Send payment</h1>

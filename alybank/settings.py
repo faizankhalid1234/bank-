@@ -246,6 +246,20 @@ else:
 
 BANK_NAME_EMAIL = os.environ.get("BANK_NAME_EMAIL", "AlyBank").strip() or "AlyBank"
 
+# --- SEO: canonical URL for meta tags, sitemap, Open Graph (defaults to PUBLIC_APP_URL)
+SITE_CANONICAL_URL = (
+    os.environ.get("SITE_CANONICAL_URL") or _public_app_url
+).strip().rstrip("/")
+SEO_DEFAULT_DESCRIPTION = (
+    os.environ.get("SEO_DEFAULT_DESCRIPTION") or ""
+).strip() or (
+    "AlyBank — open-source demo banking UI: virtual cards, IBAN-style transfers, "
+    "passkeys-ready flows, activity history and CSV export. A portfolio sandbox, "
+    "not a licensed financial institution."
+)
+# Optional full URL to a 1200×630 image for og:image / twitter:image
+SEO_OG_IMAGE_URL = (os.environ.get("SEO_OG_IMAGE_URL") or "").strip()
+
 if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 else:

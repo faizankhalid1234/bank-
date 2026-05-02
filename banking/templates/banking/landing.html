@@ -1,5 +1,15 @@
 {% extends "banking/base.html" %}
 {% block title %}Welcome · {{ BANK_NAME }}{% endblock %}
+{% block meta_description %}{{ BANK_NAME }} — open-source demo banking UI: virtual cards, IBAN-style transfers, passkeys-ready flows, activity history and CSV export. Portfolio sandbox only; not a licensed bank or real money.{% endblock %}
+{% block og_title %}Welcome · {{ BANK_NAME }}{% endblock %}
+{% block twitter_title %}Welcome · {{ BANK_NAME }}{% endblock %}
+{% block og_description %}{{ BANK_NAME }} — open-source demo banking UI: virtual cards, IBAN-style transfers, passkeys-ready flows, activity history and CSV export. Portfolio sandbox only; not a licensed bank or real money.{% endblock %}
+{% block twitter_description %}{{ BANK_NAME }} — open-source demo banking UI: virtual cards, IBAN-style transfers, passkeys-ready flows, activity history and CSV export. Portfolio sandbox only; not a licensed bank or real money.{% endblock %}
+{% block structured_data %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"{{ BANK_NAME|escapejs }}","url":"{{ SITE_CANONICAL_BASE|escapejs }}/","description":"Open-source portfolio demo banking app with virtual cards, transfers, and passkeys-ready flows. Not a financial institution."}
+</script>
+{% endblock %}
 {% block main_class %}landing-main{% endblock %}
 {% block content %}
 <div class="landing-stack">

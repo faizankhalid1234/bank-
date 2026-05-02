@@ -1,5 +1,11 @@
 {% extends "banking/base.html" %}
 {% block title %}Dashboard · {{ BANK_NAME }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block meta_description %}Your {{ BANK_NAME }} demo dashboard — balances, cards, and quick actions.{% endblock %}
+{% block og_description %}Your {{ BANK_NAME }} demo dashboard — balances, cards, and quick actions.{% endblock %}
+{% block twitter_description %}Your {{ BANK_NAME }} demo dashboard — balances, cards, and quick actions.{% endblock %}
+{% block og_title %}Dashboard · {{ BANK_NAME }}{% endblock %}
+{% block twitter_title %}Dashboard · {{ BANK_NAME }}{% endblock %}
 {% block content %}
 <div class="dash-page">
   <div class="dash-shell">

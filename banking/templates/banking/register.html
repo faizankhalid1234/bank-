@@ -1,5 +1,11 @@
 {% extends "banking/base.html" %}
 {% block title %}Open account · {{ BANK_NAME }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block meta_description %}Create a demo {{ BANK_NAME }} account — email and phone OTP verification. Portfolio sandbox only.{% endblock %}
+{% block og_description %}Create a demo {{ BANK_NAME }} account — email and phone OTP verification. Portfolio sandbox only.{% endblock %}
+{% block twitter_description %}Create a demo {{ BANK_NAME }} account — email and phone OTP verification. Portfolio sandbox only.{% endblock %}
+{% block og_title %}Open account · {{ BANK_NAME }}{% endblock %}
+{% block twitter_title %}Open account · {{ BANK_NAME }}{% endblock %}
 {% block content %}
 <div class="hero-grid">
   <section class="card" style="max-width:440px;margin-inline:auto;grid-column:1/-1">

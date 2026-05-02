@@ -1,5 +1,11 @@
 {% extends "banking/base.html" %}
 {% block title %}Activity · {{ BANK_NAME }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block meta_description %}View your {{ BANK_NAME }} demo activity and transaction history.{% endblock %}
+{% block og_description %}View your {{ BANK_NAME }} demo activity and transaction history.{% endblock %}
+{% block twitter_description %}View your {{ BANK_NAME }} demo activity and transaction history.{% endblock %}
+{% block og_title %}Activity · {{ BANK_NAME }}{% endblock %}
+{% block twitter_title %}Activity · {{ BANK_NAME }}{% endblock %}
 {% block content %}
 <div class="activity-page">
   <header class="activity-page-head">

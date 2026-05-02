@@ -1,5 +1,11 @@
 {% extends "banking/base.html" %}
 {% block title %}Log in · {{ BANK_NAME }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block meta_description %}Sign in to {{ BANK_NAME }} — demo banking: payments, activity, and saved receipts.{% endblock %}
+{% block og_description %}Sign in to {{ BANK_NAME }} — demo banking: payments, activity, and saved receipts.{% endblock %}
+{% block twitter_description %}Sign in to {{ BANK_NAME }} — demo banking: payments, activity, and saved receipts.{% endblock %}
+{% block og_title %}Log in · {{ BANK_NAME }}{% endblock %}
+{% block twitter_title %}Log in · {{ BANK_NAME }}{% endblock %}
 {% block content %}
 <div class="hero-grid">
   <section class="card" style="max-width:440px;margin-inline:auto;grid-column:1/-1">

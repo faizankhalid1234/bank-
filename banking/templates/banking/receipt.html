@@ -1,5 +1,11 @@
 {% extends "banking/base.html" %}
 {% block title %}Receipt · {{ BANK_NAME }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block meta_description %}Payment receipt — {{ BANK_NAME }} demo.{% endblock %}
+{% block og_description %}Payment receipt — {{ BANK_NAME }} demo.{% endblock %}
+{% block twitter_description %}Payment receipt — {{ BANK_NAME }} demo.{% endblock %}
+{% block og_title %}Receipt · {{ BANK_NAME }}{% endblock %}
+{% block twitter_title %}Receipt · {{ BANK_NAME }}{% endblock %}
 {% block content %}
 <div class="receipt-page">
   <article class="receipt-slip" aria-label="Payment receipt">
