@@ -10,7 +10,7 @@ if (-not (Test-Path $npm)) {
     exit 1
 }
 
-Write-Host "Vite dev (port 5173) — /api proxied to VITE_DJANGO_URL (Railway: https://web-production-9e2ed.up.railway.app)" -ForegroundColor Green
+Write-Host "Vite dev — /api proxied to VITE_DJANGO_URL (Railway API: https://web-production-77db8.up.railway.app)" -ForegroundColor Green
 Write-Host "Production SPA: https://allybank-front-1wz4.vercel.app/" -ForegroundColor DarkGray
 if (-not (Test-Path ".\node_modules")) {
     & $npm install

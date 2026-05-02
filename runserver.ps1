@@ -1,3 +1,3 @@
-# AlyBank Django — local runserver port 8000 | Production API: https://web-production-9e2ed.up.railway.app/
+# AlyBank Django — local port 8000 | Production: https://web-production-77db8.up.railway.app/
 Set-Location $PSScriptRoot
 python manage.py runserver 8000

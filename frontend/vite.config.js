@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 /** Default Railway backend (override with frontend/.env → VITE_DJANGO_URL). */
-const DEFAULT_DJANGO_URL = "https://web-production-9e2ed.up.railway.app";
+const DEFAULT_DJANGO_URL = "https://web-production-77db8.up.railway.app";
 
 function useDjangoStaticLayout(env) {
   const target = env.VITE_DEPLOY_TARGET || process.env.VITE_DEPLOY_TARGET;

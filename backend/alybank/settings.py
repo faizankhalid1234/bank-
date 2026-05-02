@@ -25,7 +25,7 @@ else:
 
 # Production app URL (Railway). Override with PUBLIC_APP_URL=https://your-host.up.railway.app
 _railway_public_domain = (os.environ.get("RAILWAY_PUBLIC_DOMAIN") or "").strip()
-_default_railway_host = "web-production-9e2ed.up.railway.app"
+_default_railway_host = "web-production-77db8.up.railway.app"
 _public_app_url = (os.environ.get("PUBLIC_APP_URL") or "").strip().rstrip("/")
 if not _public_app_url:
     _host_for_origin = _railway_public_domain or _default_railway_host
@@ -48,6 +48,16 @@ else:
             if suffix not in _hosts:
                 _hosts.append(suffix)
     ALLOWED_HOSTS = _hosts
+
+# Root "/" on this host: production → redirect to /admin/ (customer SPA on Vercel).
+# Local DEBUG: serve React at /. Override: ROOT_ENTRY=spa | admin
+_root_entry = (os.environ.get("ROOT_ENTRY") or "").strip().lower()
+if _root_entry in ("spa", "app", "frontend"):
+    RAILWAY_ROOT_TO_ADMIN = False
+elif _root_entry in ("admin", "backend"):
+    RAILWAY_ROOT_TO_ADMIN = True
+else:
+    RAILWAY_ROOT_TO_ADMIN = not DEBUG
 
 # Behind Railway / reverse proxy: HTTPS at edge, HTTP internally.
 if not DEBUG:
