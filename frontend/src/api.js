@@ -9,7 +9,19 @@ const _fromEnv =
     : "";
 const API_ORIGIN = _fromEnv || DEFAULT_RAILWAY_API;
 
+/** Debug / errors — Railway backend base (no trailing slash). */
+export const RAILWAY_API_BASE = API_ORIGIN;
+
 const TOKEN_KEY = "alybank_auth_token";
+
+function errNetworkFailed(what, url) {
+  return (
+    `${what} — URL open nahi ho saki: ${url} | API base: ${API_ORIGIN} ` +
+    `(Railway: ${DEFAULT_RAILWAY_API}). ` +
+    `Vercel: Environment → VITE_DJANGO_URL = ${DEFAULT_RAILWAY_API}. ` +
+    `Local dev: frontend/.env.local → VITE_DJANGO_URL=http://127.0.0.1:8000`
+  );
+}
 
 let csrfToken = null;
 
@@ -71,13 +83,12 @@ function errorMessageFromResponse(data) {
 }
 
 export async function ensureCsrf() {
+  const csrfUrl = `${API_ORIGIN}${API_PREFIX}/csrf/`;
   let r;
   try {
-    r = await fetch(`${API_ORIGIN}${API_PREFIX}/csrf/`, { credentials: "include" });
+    r = await fetch(csrfUrl, { credentials: "include", mode: "cors" });
   } catch {
-    throw new Error(
-      "Server tak pohnch nahi saka — Railway backend reachable hai? Vercel par VITE_DJANGO_URL set hai?"
-    );
+    throw new Error(errNetworkFailed("CSRF fetch fail", csrfUrl));
   }
   const text = await r.text();
   const j = parseJsonSafe(text);
@@ -110,16 +121,16 @@ async function apiFetch(path, options = {}) {
     headers["X-CSRFToken"] = csrf;
   }
   let r;
+  const fullUrl = `${API_ORIGIN}${API_PREFIX}${path}`;
   try {
-    r = await fetch(`${API_ORIGIN}${API_PREFIX}${path}`, {
+    r = await fetch(fullUrl, {
       ...options,
       credentials: "include",
+      mode: "cors",
       headers,
     });
   } catch {
-    throw new Error(
-      "Network error — API backend nahi mil raha. VITE_DJANGO_URL (Railway) sahi hai? Alag frontend domain par CORS backend par set karein."
-    );
+    throw new Error(errNetworkFailed("API request fail", fullUrl));
   }
   const text = await r.text();
   let data = null;
