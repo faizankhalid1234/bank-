@@ -5,8 +5,10 @@ __pycache__/
 db.sqlite3
 *.log
 .env
+backend/.env
+frontend/.env
 .idea/
 .vscode/
 frontend/node_modules/
 # Vite build output (Dockerfile runs npm run build — no need to commit)
-static/spa/
+backend/static/spa/

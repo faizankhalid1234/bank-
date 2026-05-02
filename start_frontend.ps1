@@ -11,6 +11,7 @@ if (-not (Test-Path $npm)) {
 }
 
 Write-Host "Frontend: http://localhost:5173/  (backend: http://127.0.0.1:8000/ — start_backend.ps1)" -ForegroundColor Green
+Write-Host "Tip: copy frontend/.env.example → frontend/.env (VITE_DJANGO_URL = Railway backend URL)" -ForegroundColor DarkGray
 if (-not (Test-Path ".\node_modules")) {
     & $npm install
 }

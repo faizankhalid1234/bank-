@@ -55,7 +55,7 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     build: {
-      outDir: "../static/spa",
+      outDir: "../backend/static/spa",
       emptyOutDir: true,
     },
     server: {

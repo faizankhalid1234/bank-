@@ -1,6 +1,8 @@
 .git
 .gitignore
 .env
+backend/.env
+frontend/.env
 .venv
 venv
 __pycache__
@@ -11,6 +13,7 @@ __pycache__
 .cursor
 *.md
 frontend/node_modules
-static/spa
+backend/static/spa
 db.sqlite3
+backend/db.sqlite3
 *.sqlite3

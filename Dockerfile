@@ -21,11 +21,11 @@ RUN apt-get update \
         libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-COPY --from=spa /static/spa ./static/spa
+COPY backend/ .
+COPY --from=spa /backend/static/spa ./static/spa
 
 RUN python manage.py collectstatic --noinput --clear
 
