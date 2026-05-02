@@ -170,21 +170,15 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOW_CREDENTIALS = True
+# Deployed SPA on Vercel. Local dev: set DEPLOYMENT_CORS_ORIGINS=http://localhost:5173 in backend/.env
+_DEFAULT_FRONTEND_ORIGIN = "https://allybank-front-1wz4.vercel.app"
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
+    _DEFAULT_FRONTEND_ORIGIN,
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
+    _DEFAULT_FRONTEND_ORIGIN,
 ]
-# Railway production (https://bank-production-f72a.up.railway.app/) — same SPA + API origin
+# Railway API host (same app or API-only) — appended below from PUBLIC_APP_URL
 if _public_app_url.startswith("http") and _public_app_url not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(_public_app_url)
 if _public_app_url.startswith("http") and _public_app_url not in CSRF_TRUSTED_ORIGINS:

@@ -6,6 +6,6 @@ if (-not (Test-Path ".\venv\Scripts\Activate.ps1")) {
 }
 & ".\venv\Scripts\Activate.ps1"
 python manage.py migrate --noinput
-Write-Host "Backend: http://127.0.0.1:8000/  |  Admin: http://127.0.0.1:8000/admin/" -ForegroundColor Green
-Write-Host "Tip: Django env = backend/.env" -ForegroundColor DarkGray
+Write-Host "Django runserver (local): port 8000  |  Deployed API: https://web-production-9e2ed.up.railway.app/" -ForegroundColor Green
+Write-Host "Env: backend/.env — local dev CORS: DEPLOYMENT_CORS_ORIGINS=http://localhost:5173" -ForegroundColor DarkGray
 python manage.py runserver 8000

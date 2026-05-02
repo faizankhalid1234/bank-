@@ -74,7 +74,7 @@ export async function ensureCsrf() {
     r = await fetch(`${API_ORIGIN}${API_PREFIX}/csrf/`, { credentials: "include" });
   } catch {
     throw new Error(
-      "Server tak pohnch nahi saka — backend (Railway) reachable hai? VITE_DJANGO_URL check karein; local Django ke liye .env mein http://127.0.0.1:8000 set karein."
+      "Server tak pohnch nahi saka — Railway backend reachable hai? Vercel par VITE_DJANGO_URL set hai?"
     );
   }
   const text = await r.text();

@@ -10,8 +10,8 @@ if (-not (Test-Path $npm)) {
     exit 1
 }
 
-Write-Host "Frontend: http://localhost:5173/  (backend: http://127.0.0.1:8000/ — start_backend.ps1)" -ForegroundColor Green
-Write-Host "Tip: copy frontend/.env.example → frontend/.env (VITE_DJANGO_URL = Railway backend URL)" -ForegroundColor DarkGray
+Write-Host "Vite dev (port 5173) — /api proxied to VITE_DJANGO_URL (Railway: https://web-production-9e2ed.up.railway.app)" -ForegroundColor Green
+Write-Host "Production SPA: https://allybank-front-1wz4.vercel.app/" -ForegroundColor DarkGray
 if (-not (Test-Path ".\node_modules")) {
     & $npm install
 }
