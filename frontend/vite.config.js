@@ -8,8 +8,9 @@ import { VitePWA } from "vite-plugin-pwa";
 const DEFAULT_DJANGO_URL = "https://web-production-9e2ed.up.railway.app";
 
 function useDjangoStaticLayout(env) {
-  if (env.VITE_DEPLOY_TARGET === "django") return true;
-  if (env.VITE_DEPLOY_TARGET === "standalone") return false;
+  const target = env.VITE_DEPLOY_TARGET || process.env.VITE_DEPLOY_TARGET;
+  if (target === "django") return true;
+  if (target === "standalone") return false;
   const sibling = path.join(process.cwd(), "..", "backend");
   try {
     return fs.existsSync(sibling) && fs.statSync(sibling).isDirectory();

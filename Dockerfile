@@ -6,6 +6,8 @@ WORKDIR /src
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ .
+# Docker SPA stage has no ../backend folder until Python stage — force Django static layout + out path.
+ENV VITE_DEPLOY_TARGET=django
 RUN npm run build
 
 FROM python:3.12-slim
@@ -31,4 +33,4 @@ RUN python manage.py collectstatic --noinput --clear
 
 EXPOSE 8000
 
-CMD sh -c "python manage.py migrate --noinput && exec gunicorn alybank.wsgi:application --bind 0.0.0.0:${PORT} --workers 2 --threads 4 --timeout 120"
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn alybank.wsgi:application --bind 0.0.0.0:${PORT} --workers 2 --threads 4 --timeout 120"]
