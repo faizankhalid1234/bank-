@@ -1,14 +1,6 @@
 # syntax=docker/dockerfile:1
-# Build React SPA, then run Django + Gunicorn (migrations on start).
-
-FROM node:20-alpine AS spa
-WORKDIR /src
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
-COPY frontend/ .
-# Docker SPA stage has no ../backend folder until Python stage — force Django static layout + out path.
-ENV VITE_DEPLOY_TARGET=django
-RUN npm run build
+# Django from repo root: COPY backend → collectstatic → gunicorn. No frontend here.
+# Build: docker build -t alybank-api .
 
 FROM python:3.12-slim
 WORKDIR /app
@@ -27,8 +19,6 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
-COPY --from=spa /backend/static/spa ./static/spa
-
 RUN python manage.py collectstatic --noinput --clear
 
 EXPOSE 8000
