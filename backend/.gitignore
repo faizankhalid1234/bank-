@@ -1,0 +1,5 @@
+# Django collectstatic → STATIC_ROOT (WhiteNoise / deploy)
+staticfiles/
+
+# Vite production build (npm run build in ../frontend)
+static/spa/

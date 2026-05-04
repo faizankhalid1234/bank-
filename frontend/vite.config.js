@@ -4,9 +4,6 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-/** Default Railway backend (override with frontend/.env → VITE_DJANGO_URL). */
-const DEFAULT_DJANGO_URL = "https://web-production-77db8.up.railway.app";
-
 function useDjangoStaticLayout(env) {
   const target = env.VITE_DEPLOY_TARGET || process.env.VITE_DEPLOY_TARGET;
   if (target === "django") return true;
@@ -21,7 +18,18 @@ function useDjangoStaticLayout(env) {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const django = (env.VITE_DJANGO_URL || DEFAULT_DJANGO_URL).replace(/\/$/, "");
+  const django = (
+    env.VITE_DJANGO_URL ||
+    process.env.VITE_DJANGO_URL ||
+    ""
+  )
+    .trim()
+    .replace(/\/$/, "");
+  if (!django) {
+    throw new Error(
+      "VITE_DJANGO_URL is missing. Set it in frontend/.env, .env.development, or .env.production (see .env.example)."
+    );
+  }
   const djangoStatic = useDjangoStaticLayout(env);
   const base =
     mode === "production" ? (djangoStatic ? "/static/spa/" : "/") : "/";

@@ -1,25 +1,27 @@
 const API_PREFIX = "/api";
 
-/** Must match backend deploy; used if env missing (Vercel build must still hit Railway, not relative /api). */
-const DEFAULT_RAILWAY_API = "https://web-production-77db8.up.railway.app";
-
 const _fromEnv =
   typeof import.meta.env.VITE_DJANGO_URL === "string"
     ? import.meta.env.VITE_DJANGO_URL.trim().replace(/\/$/, "")
     : "";
-const API_ORIGIN = _fromEnv || DEFAULT_RAILWAY_API;
+if (!_fromEnv) {
+  throw new Error(
+    "VITE_DJANGO_URL is missing. Set it in frontend/.env, .env.development, or .env.production (see .env.example), or in Vercel → Environment Variables."
+  );
+}
+const API_ORIGIN = _fromEnv;
 
-/** Debug / errors — Railway backend base (no trailing slash). */
+/** Debug / errors — Django API origin (no trailing slash); same as VITE_DJANGO_URL at build time. */
 export const RAILWAY_API_BASE = API_ORIGIN;
 
 const TOKEN_KEY = "alybank_auth_token";
 
 function errNetworkFailed(what, url) {
   return (
-    `${what} — URL open nahi ho saki: ${url} | API base: ${API_ORIGIN} ` +
-    `(Railway: ${DEFAULT_RAILWAY_API}). ` +
-    `Vercel: Environment → VITE_DJANGO_URL = ${DEFAULT_RAILWAY_API}. ` +
-    `Local dev: frontend/.env.local → VITE_DJANGO_URL=http://127.0.0.1:8000`
+    `${what} — URL open nahi ho saki: ${url} | API base: ${API_ORIGIN}. ` +
+    `Build/dev: .env mein VITE_DJANGO_URL (see .env.example). ` +
+    `Vercel: Environment Variables → VITE_DJANGO_URL. ` +
+    `Local Django: VITE_DJANGO_URL=http://127.0.0.1:8000`
   );
 }
 

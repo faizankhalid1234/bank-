@@ -10,6 +10,5 @@ frontend/.env
 .idea/
 .vscode/
 frontend/node_modules/
-# Vite build output (Dockerfile runs npm run build — no need to commit)
-backend/static/spa/
+# Backend static artifacts: see backend/.gitignore
 frontend/dist/
